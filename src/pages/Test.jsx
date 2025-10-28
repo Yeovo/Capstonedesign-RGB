@@ -1,285 +1,508 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 /**
- * Ishihara-like 검사 (시연용 판정 버전)
- * - 문항을 deutan/protan/control로 태깅
- * - 해당 유형 문항에서 오답/미응답일 때 유형 점수 가산
- * - 최종 휴리스틱 판정: Deutan/Protan/정상 범위/불충분
- * ⚠ 의료용 진단이 아님 (학습·데모 목적)
+ * 색각 민감도 스크리닝 프로토타입 (확장판)
+ * - grid odd-one-out 모드만 구현 (3x3 중 다른 칸 클릭)
+ * - axis:
+ *    'a'     → 빨강-초록 계열(L/M 축)
+ *    'b'     → 파랑-노랑 계열(S 축)
+ *    'both'  → 전반 채도/대비 감지
+ *
+ * ⚠ 의학적 진단용 아님. 참고/연습/연구용.
  */
 
-/* ===================== 시험 설계 ===================== */
-// 총 문항(예: 12문항) — 난이도(delta: 작을수록 어렵게)
-const QUESTIONS = [
-  // Deutan 타깃(녹색계 혼동 유도 팔레트)
-  { id: 'D1', type: 'deutan', answer: '12', delta: 9,  paletteKey: 'orange-green' },
-  { id: 'D2', type: 'deutan', answer: '8',  delta: 7,  paletteKey: 'olive-purple' },
-  { id: 'D3', type: 'deutan', answer: '29', delta: 6,  paletteKey: 'salmon-mint' },
-  { id: 'D4', type: 'deutan', answer: '45', delta: 5,  paletteKey: 'grayish-green' },
+/* ===================== 색공간 유틸 ===================== */
 
-  // Protan 타깃(적색계 혼동 유도 팔레트)
-  { id: 'P1', type: 'protan', answer: '6',  delta: 9,  paletteKey: 'red-blue' },
-  { id: 'P2', type: 'protan', answer: '73', delta: 7,  paletteKey: 'pink-teal' },
-  { id: 'P3', type: 'protan', answer: '5',  delta: 6,  paletteKey: 'blue-yellow' },
-  { id: 'P4', type: 'protan', answer: '16', delta: 5,  paletteKey: 'brown-sky' },
-
-  // Control(중립 — 모두가 보기 쉬운 편)
-  { id: 'C1', type: 'control', answer: '7',  delta: 12, paletteKey: 'orange-green' },
-  { id: 'C2', type: 'control', answer: '3',  delta: 12, paletteKey: 'red-blue' },
-  { id: 'C3', type: 'control', answer: '9',  delta: 12, paletteKey: 'blue-yellow' },
-  { id: 'C4', type: 'control', answer: '0',  delta: 12, paletteKey: 'pink-teal' },
-]
-
-const SECONDS_PER_QUESTION = 22
-
-/* ================= 팔레트(유형별 난색/냉색 조합) ================= */
-const paletteBank = [
-  { key: 'orange-green', bg: { h: 28,  s: 70, l: 60 }, fg: { h: 130, s: 55, l: 58 } }, // 주황 vs 녹색 (deutan 타깃)
-  { key: 'olive-purple', bg: { h: 70,  s: 45, l: 58 }, fg: { h: 275, s: 45, l: 60 } }, // 올리브 vs 보라 (deutan)
-  { key: 'salmon-mint',  bg: { h: 12,  s: 60, l: 62 }, fg: { h: 150, s: 50, l: 60 } }, // 살몬 vs 민트 (deutan)
-  { key: 'grayish-green',bg: { h: 30,  s: 25, l: 58 }, fg: { h: 130, s: 25, l: 60 } }, // 저채도 녹/갈 (deutan)
-
-  { key: 'red-blue',     bg: { h: 10,  s: 65, l: 60 }, fg: { h: 220, s: 60, l: 58 } }, // 적 vs 청 (protan)
-  { key: 'pink-teal',    bg: { h: 335, s: 55, l: 63 }, fg: { h: 170, s: 50, l: 60 } }, // 분홍 vs 청록 (protan)
-  { key: 'blue-yellow',  bg: { h: 48,  s: 70, l: 62 }, fg: { h: 210, s: 65, l: 60 } }, // 황 vs 청 (protan)
-  { key: 'brown-sky',    bg: { h: 25,  s: 45, l: 58 }, fg: { h: 200, s: 55, l: 60 } }, // 갈 vs 하늘 (protan)
-]
-
-const hsl = (h,s,l)=>`hsl(${h}deg ${s}% ${l}%)`
-const clamp = (v,a,b)=>Math.max(a,Math.min(b,v))
-function makePalettesFromBase(base, delta) {
-  // delta가 작을수록 채도차 축소 → 구별 어려움
-  const reduceS = Math.max(0, 14 - delta)
-  const jitter = (n, spread)=> n + (Math.random()*2-1)*spread
-  const mk = (b)=> Array.from({length:6},(_,i)=>hsl(
-    clamp(jitter(b.h + (i-3)*2.5,3),0,360),
-    clamp(jitter(b.s + (i-3)*2 - reduceS,4),0,100),
-    clamp(jitter(b.l + (i-3)*1.5,3),0,100),
-  ))
-  return { bgSet: mk(base.bg), fgSet: mk(base.fg) }
+function srgbToLinear(c) {
+  const x = c / 255;
+  return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+}
+function linearToSrgb(x) {
+  const v = x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
+  return Math.round(Math.min(1, Math.max(0, v)) * 255);
 }
 
-/* ================= 숫자 스텐실 ================= */
-const DIGIT_5x7 = {
-  '0':['01110','10001','10011','10101','11001','10001','01110'],
-  '1':['00100','01100','00100','00100','00100','00100','01110'],
-  '2':['01110','10001','00001','00010','00100','01000','11111'],
-  '3':['11110','00001','00001','01110','00001','00001','11110'],
-  '4':['00010','00110','01010','10010','11111','00010','00010'],
-  '5':['11111','10000','11110','00001','00001','10001','01110'],
-  '6':['00110','01000','10000','11110','10001','10001','01110'],
-  '7':['11111','00001','00010','00100','01000','01000','01000'],
-  '8':['01110','10001','10001','01110','10001','10001','01110'],
-  '9':['01110','10001','10001','01111','00001','00010','01100'],
+function xyzToRgb(xyz) {
+  const { X, Y, Z } = xyz;
+  const R =  3.2404542*X -1.5371385*Y -0.4985314*Z;
+  const G = -0.9692660*X +1.8760108*Y +0.0415560*Z;
+  const B =  0.0556434*X -0.2040259*Y +1.0572252*Z;
+  return {
+    r: linearToSrgb(R),
+    g: linearToSrgb(G),
+    b: linearToSrgb(B),
+  };
 }
-function buildMaskFromDigits(str, gap=1){
-  const rows=7, colsPer=5
-  const totalCols = str.length*colsPer + (str.length-1)*gap
-  const mask = Array.from({length:rows},()=>Array(totalCols).fill(false))
-  let off=0
-  for (const ch of str){
-    const m = DIGIT_5x7[ch]; if(!m){ off+=colsPer+gap; continue }
-    for(let r=0;r<rows;r++) for(let c=0;c<colsPer;c++)
-      if(m[r][c]==='1') mask[r][off+c]=true
-    off+=colsPer+gap
+
+function rgbToXyz(rgb) {
+  const R = srgbToLinear(rgb.r),
+        G = srgbToLinear(rgb.g),
+        B = srgbToLinear(rgb.b);
+  const X = R*0.4124564 + G*0.3575761 + B*0.1804375;
+  const Y = R*0.2126729 + G*0.7151522 + B*0.0721750;
+  const Z = R*0.0193339 + G*0.1191920 + B*0.9503041;
+  return { X, Y, Z };
+}
+
+function fLab(t) {
+  return t > 0.008856 ? Math.cbrt(t) : (7.787 * t + 16/116);
+}
+function invfLab(t) {
+  const t3 = t*t*t;
+  return t3 > 0.008856 ? t3 : (t - 16/116)/7.787;
+}
+
+// XYZ <-> Lab (D65)
+function xyzToLab(xyz) {
+  const Xn=0.95047, Yn=1.00000, Zn=1.08883;
+  const fx = fLab(xyz.X/Xn),
+        fy = fLab(xyz.Y/Yn),
+        fz = fLab(xyz.Z/Zn);
+  return {
+    L: 116*fy -16,
+    a: 500*(fx - fy),
+    b: 200*(fy - fz),
+  };
+}
+function labToXyz(lab) {
+  const { L,a,b } = lab;
+  const fy = (L + 16)/116;
+  const fx = fy + a/500;
+  const fz = fy - b/200;
+  const Xn=0.95047, Yn=1.00000, Zn=1.08883;
+  return {
+    X: Xn*invfLab(fx),
+    Y: Yn*invfLab(fy),
+    Z: Zn*invfLab(fz),
+  };
+}
+function labToRgb(lab) {
+  return xyzToRgb(labToXyz(lab));
+}
+
+/**
+ * 축 방향으로 delta만큼 이동한 색 만들기.
+ * axis: 'a' | 'b' | 'both'
+ *  - 'a': a*만 바꿈  (빨강-초록 축 민감도)
+ *  - 'b': b*만 바꿈  (파랑-노랑 축 민감도)
+ *  - 'both': a*, b*를 동시에 조금씩 바꿔서 전반 채도/대비 민감도 테스트
+ */
+function makeVariantColors(baseLab, axis, delta) {
+  const sameRGB = labToRgb(baseLab);
+
+  let shiftedLab;
+  if (axis === 'a') {
+    shiftedLab = { ...baseLab, a: baseLab.a + delta };
+  } else if (axis === 'b') {
+    shiftedLab = { ...baseLab, b: baseLab.b + delta };
+  } else {
+    shiftedLab = {
+      ...baseLab,
+      a: baseLab.a + delta,
+      b: baseLab.b + delta,
+    };
   }
-  return mask
+
+  const diffRGB = labToRgb(shiftedLab);
+  return [sameRGB, diffRGB];
 }
 
-/* ================= 플레이트 그리기 ================= */
-function IshiharaPlate({ size=420, answer, delta, paletteKey, seed }) {
-  const ref = useRef(null)
-  const mask = useMemo(()=>buildMaskFromDigits(answer,2),[answer])
-  const palettes = useMemo(()=>{
-    const base = paletteBank.find(p=>p.key===paletteKey) || paletteBank[0]
-    return makePalettesFromBase(base, delta)
-  },[paletteKey, delta])
+/**
+ * 3x3 격자에서 하나만 diffRGB로 칠한다.
+ */
+function drawGrid(ctx, baseRGB, diffRGB, diffIndex) {
+  const size = Math.min(ctx.canvas.width, ctx.canvas.height);
+  const cell = size / 3;
 
-  useEffect(()=>{
-    const cvs = ref.current
-    const ctx = cvs.getContext('2d')
-    const W=size,H=size; cvs.width=W; cvs.height=H
-    let s = (seed||1) >>> 0
-    const rand = ()=> (s = (s*1664525 + 1013904223) % 4294967296)/4294967296
-
-    const cx=W/2, cy=H/2, R=Math.min(W,H)*0.45
-    ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H) // 어두운 배경(디스플레이 편차 완화)
-    const rows=mask.length, cols=mask[0].length
-    const cell=(R*1.8)/Math.max(rows,cols)
-    const sx=cx-(cols*cell)/2, sy=cy-(rows*cell)/2
-
-    const {bgSet, fgSet}=palettes
-    const dots=Math.floor(R*R*0.09)
-    for(let i=0;i<dots;i++){
-      const t=2*Math.PI*rand(), r=R*Math.sqrt(rand())
-      const x=cx + r*Math.cos(t), y=cy + r*Math.sin(t)
-      const c=Math.floor((x-sx)/cell), rr=Math.floor((y-sy)/cell)
-      const inDigit = rr>=0&&rr<rows&&c>=0&&c<cols ? mask[rr][c] : false
-      const clr=inDigit? fgSet[Math.floor(rand()*fgSet.length)] : bgSet[Math.floor(rand()*bgSet.length)]
-      ctx.fillStyle=clr
-      const rad=4+rand()*7
-      ctx.beginPath(); ctx.arc(x+(rand()-0.5)*2, y+(rand()-0.5)*2, rad, 0, Math.PI*2); ctx.fill()
-    }
-    // 테두리
-    ctx.strokeStyle='#d1d5db'; ctx.lineWidth=3
-    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke()
-  },[size, answer, delta, paletteKey, seed, palettes, mask])
-
-  return <canvas ref={ref} style={{ width:size, height:size, display:'block', borderRadius:12 }} />
+  for (let i=0; i<9; i++){
+    const x = (i%3)*cell;
+    const y = Math.floor(i/3)*cell;
+    const c = (i===diffIndex) ? diffRGB : baseRGB;
+    ctx.fillStyle = `rgb(${c.r},${c.g},${c.b})`;
+    ctx.fillRect(x,y,cell,cell);
+  }
 }
 
-/* ================= 메인 컴포넌트 ================= */
-export default function Test(){
-  const [idx, setIdx] = useState(0)
-  const [input, setInput] = useState('')
-  const [answers, setAnswers] = useState([]) // {id,type,answer,input,correct,ms,delta}
-  const [remaining, setRemaining] = useState(SECONDS_PER_QUESTION)
-  const [running, setRunning] = useState(true)
-  const startRef = useRef(Date.now())
+/* ===================== 문제 풀 정의 ===================== */
 
-  const q = QUESTIONS[idx]
-  const total = QUESTIONS.length
-  const done = answers.length === total
+const QUESTIONS_TEMPLATE = [
+  // L/M 축 palette 1
+  { axis:'a', difficulty:'easy', palette:1, mode:'grid',
+    baseLab:{ L:60, a:20, b:20 }, delta:10 },
+  { axis:'a', difficulty:'mid',  palette:1, mode:'grid',
+    baseLab:{ L:60, a:20, b:20 }, delta:6  },
+  { axis:'a', difficulty:'hard', palette:1, mode:'grid',
+    baseLab:{ L:60, a:20, b:20 }, delta:3  },
+
+  // L/M 축 palette 2
+  { axis:'a', difficulty:'easy', palette:2, mode:'grid',
+    baseLab:{ L:55, a:30, b:25 }, delta:10 },
+  { axis:'a', difficulty:'mid',  palette:2, mode:'grid',
+    baseLab:{ L:55, a:30, b:25 }, delta:6  },
+  { axis:'a', difficulty:'hard', palette:2, mode:'grid',
+    baseLab:{ L:55, a:30, b:25 }, delta:3  },
+
+  // S 축 palette 1
+  { axis:'b', difficulty:'easy', palette:1, mode:'grid',
+    baseLab:{ L:60, a:0,  b:5  }, delta:10 },
+  { axis:'b', difficulty:'mid',  palette:1, mode:'grid',
+    baseLab:{ L:60, a:0,  b:5  }, delta:6  },
+  { axis:'b', difficulty:'hard', palette:1, mode:'grid',
+    baseLab:{ L:60, a:0,  b:5  }, delta:3  },
+
+  // S 축 palette 2
+  { axis:'b', difficulty:'easy', palette:2, mode:'grid',
+    baseLab:{ L:50, a:15, b:-30 }, delta:10 },
+  { axis:'b', difficulty:'mid',  palette:2, mode:'grid',
+    baseLab:{ L:50, a:15, b:-30 }, delta:6  },
+  { axis:'b', difficulty:'hard', palette:2, mode:'grid',
+    baseLab:{ L:50, a:15, b:-30 }, delta:3  },
+
+  // 전반 대비 / 채도 민감도
+  { axis:'both', difficulty:'easy', palette:1, mode:'grid',
+    baseLab:{ L:60, a:2,  b:2  }, delta:8  },
+  { axis:'both', difficulty:'mid',  palette:1, mode:'grid',
+    baseLab:{ L:60, a:2,  b:2  }, delta:4  },
+  { axis:'both', difficulty:'hard', palette:1, mode:'grid',
+    baseLab:{ L:60, a:2,  b:2  }, delta:2  },
+];
+
+const SECONDS_PER_QUESTION = 22;
+
+
+/* ===================== 메인 컴포넌트 ===================== */
+export default function ColorVisionScreening() {
+  // 질문 세트 초기화 (diffIndex 랜덤)
+  const [questions] = useState(() =>
+    QUESTIONS_TEMPLATE.map((q, idx) => ({
+      ...q,
+      id: `${q.axis}_${q.difficulty}_p${q.palette}_${idx}`,
+      diffIndex: Math.floor(Math.random()*9),
+    }))
+  );
+
+  const total = questions.length;
+
+  const [idx, setIdx] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [remaining, setRemaining] = useState(SECONDS_PER_QUESTION);
+  const [running, setRunning] = useState(true);
+
+  const startRef = useRef(Date.now());
+  const canvasRef = useRef(null);
+
+  const currentQ = questions[idx];
+  const done = answers.length === total;
+
+  // 캔버스 렌더링
+  useEffect(() => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    if (!ctx) return;
+
+    const [baseRGB, diffRGB] = makeVariantColors(
+      currentQ.baseLab,
+      currentQ.axis,
+      currentQ.delta
+    );
+
+    drawGrid(ctx, baseRGB, diffRGB, currentQ.diffIndex);
+  }, [idx, currentQ]);
 
   // 타이머
-  useEffect(()=>{
-    if (!running) return
-    const t = setInterval(()=>{
-      setRemaining(s=>{
-        if (s<=1){ clearInterval(t); submit('') ; return 0 }
-        return s-1
-      })
-    }, 1000)
-    return ()=>clearInterval(t)
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => {
+      setRemaining((s) => {
+        if (s <= 1) {
+          clearInterval(t);
+          submitAnswer(null); // 시간초과
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[idx, running])
+  }, [idx, running]);
 
-  const submit = (val)=>{
-    const ms = Date.now() - startRef.current
-    const user = (val||'').trim()
-    const correct = user === q.answer
-    setAnswers(prev => [...prev, { id:q.id, type:q.type, answer:q.answer, input:user, correct, ms, delta:q.delta }])
-    if (idx < total-1){
-      setIdx(i=>i+1); setInput(''); setRemaining(SECONDS_PER_QUESTION)
-      startRef.current = Date.now(); setRunning(true)
+  // 클릭 -> 몇 번째 칸?
+  const handleCanvasClick = (e) => {
+    if (!running) return;
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+
+    const rect = cvs.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const scaleX = cvs.width / rect.width;
+    const scaleY = cvs.height / rect.height;
+    const canvasX = clickX * scaleX;
+    const canvasY = clickY * scaleY;
+
+    const size = Math.min(cvs.width, cvs.height);
+    const cell = size / 3;
+    const col = Math.floor(canvasX / cell);
+    const row = Math.floor(canvasY / cell);
+
+    if (col < 0 || col > 2 || row < 0 || row > 2) return;
+    const pickIndex = row*3 + col;
+
+    submitAnswer(pickIndex);
+  };
+
+  // 제출
+  const submitAnswer = (pickIndex) => {
+    const ms = Date.now() - startRef.current;
+    const correct = (pickIndex === currentQ.diffIndex);
+
+    const ansRecord = {
+      qid: currentQ.id,
+      axis: currentQ.axis,
+      difficulty: currentQ.difficulty,
+      palette: currentQ.palette,
+      diffIndex: currentQ.diffIndex,
+      pickIndex,
+      correct,
+      ms,
+    };
+
+    setAnswers(prev => [...prev, ansRecord]);
+
+    if (idx < total - 1) {
+      setIdx(i => i + 1);
+      setRemaining(SECONDS_PER_QUESTION);
+      startRef.current = Date.now();
+      setRunning(true);
     } else {
-      setRunning(false)
+      setRunning(false);
     }
-  }
+  };
 
-  const restart = ()=>{
-    setIdx(0); setInput(''); setAnswers([]); setRemaining(SECONDS_PER_QUESTION)
-    startRef.current = Date.now(); setRunning(true)
-  }
+  // 리스타트(데모용: 그냥 새로고침)
+  const restart = () => {
+    window.location.reload();
+  };
 
-  /* ---------- 최종 판정 로직(휴리스틱) ---------- */
-  const result = useMemo(()=>{
-    if (!done) return null
-    const deutanWrong = answers.filter(a=>a.type==='deutan' && !a.correct).length
-    const protanWrong = answers.filter(a=>a.type==='protan' && !a.correct).length
-    const controlWrong = answers.filter(a=>a.type==='control' && !a.correct).length
+  // JSON 다운로드
+  const downloadJSON = (payload) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url;
+    a.download='color_vision_screening_result.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-    // 기준선(문항 4개씩): 2개 이상 틀리면 해당 유형 가능성 ↑
-    let label = '정상 범위 가능성'
-    let note  = '시연용 추정입니다. 정확한 검사는 전문기관을 이용하세요.'
-    if (Math.max(deutanWrong, protanWrong) === 0 && controlWrong === 0) {
-      label = '정상 범위 가능성'
-    } else if (deutanWrong >= 2 && deutanWrong - protanWrong >= 1) {
-      label = '녹색계 색각 이상(Deutan) 가능성'
-    } else if (protanWrong >= 2 && protanWrong - deutanWrong >= 1) {
-      label = '적색계 색각 이상(Protan) 가능성'
-    } else if (controlWrong >= 2) {
-      label = '판정 불충분 (디스플레이/조명/거리 등 영향 가능)'
-      note  = '조도/거리/화면 설정을 바꾸고 다시 시도해보세요.'
-    } else {
-      label = '불분명 — 추가 검사 권장'
+  /* ===================== 결과 분석 =====================
+     여기서 "최종 한 줄 메시지"만 뽑는다.
+     - axis='a' (빨강-초록) hard 난이도 정확도
+     - axis='b' (파랑-노랑) hard 난이도 정확도
+     기준으로 경고 메시지 선택
+  */
+  const report = useMemo(() => {
+    if (!done) return null;
+
+    // helper: 특정 축(ax) + hard 난이도에서의 정답률
+    function getHardAcc(axisName) {
+      // answers 중 axis===axisName && difficulty==='hard'
+      const subset = answers.filter(
+        a => a.axis === axisName && a.difficulty === 'hard'
+      );
+      if (subset.length === 0) return null;
+      const correctCnt = subset.filter(a=>a.correct).length;
+      return correctCnt / subset.length;
+    }
+
+    const accA = getHardAcc('a');     // 적/녹
+    const accB = getHardAcc('b');     // 청/황
+
+    // 임계값 (대충 예시):
+    // hard에서 정답률 < 0.4 → "심한 저하 의심"
+    // hard에서 정답률 < 0.7 → "경미한 저하 의심"
+    // 그 이상 → 정상 범위로 취급
+    function classifyAxis(acc) {
+      if (acc === null) return 'unknown'; // 데이터 없으면
+      if (acc < 0.4) return 'severe';
+      if (acc < 0.7) return 'mild';
+      return 'ok';
+    }
+
+    const classA = classifyAxis(accA);
+    const classB = classifyAxis(accB);
+
+    // 우선순위:
+    // 1) 둘 다 severe or (하나는 severe, 다른 하나 mild 이상) → 광범위 이상
+    // 2) A축이 mild 이상 문제 → 적색약/녹색약 의심
+    // 3) B축이 mild 이상 문제 → 청색약 의심
+    // 4) 나머지 → 정상 범위로 보입니다.
+
+    let headline = '정상입니다(색각 이상이 없습니다).';
+    let subNote =
+      '이 테스트는 의학적 진단이 아니며 참고용입니다. 실제 색각 이상 여부는 전문 검사를 통해 확인하셔야 합니다.';
+
+    const aProblem = (classA === 'severe' || classA === 'mild');
+    const bProblem = (classB === 'severe' || classB === 'mild');
+
+    if (aProblem && bProblem) {
+      headline = '광범위한 색각 이상(전색약)이 의심됩니다.';
+      subNote =
+        '여러 색 축(빨강-초록 및 파랑-노랑 계열)에서 미세한 색 차이 구분이 어렵게 나타났습니다. 전문 시력 검사를 권장합니다.';
+    } else if (aProblem) {
+      headline = '적색약/녹색약이 의심됩니다.';
+      subNote =
+        '빨강-초록 계열 색 차이를 미세하게 구분하는 능력이 낮게 측정되었습니다. 전문 시력 검사를 권장합니다.';
+    } else if (bProblem) {
+      headline = '청색약이 의심됩니다.';
+      subNote =
+        '파랑-노랑 계열 색 차이를 미세하게 구분하는 능력이 낮게 측정되었습니다. 전문 시력 검사를 권장합니다.';
     }
 
     return {
-      label, note,
-      deutanWrong, protanWrong, controlWrong,
-      avgMs: Math.round(answers.reduce((s,a)=>s+a.ms, 0)/answers.length)
-    }
-  }, [done, answers])
+      headline,
+      subNote,
+      accA,
+      accB,
+      answers,
+    };
+  }, [done, answers]);
 
-  /* ------------------- UI ------------------- */
-  if (done && result){
+  /* ===================== 렌더 ===================== */
+
+  if (done && report) {
     return (
       <div style={{ maxWidth: 760 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>결과 요약 (프로토타입)</h2>
-        <p style={{ color:'#aaa', marginTop: 0 }}>
-          ※ 본 테스트는 <b>의학적 진단 목적이 아닌</b> UI 프로토타입입니다.
-        </p>
+        <h2 style={{ fontSize:22, fontWeight:800, marginBottom:6 }}>
+          결과
+        </h2>
 
-        <div style={{ padding: 14, border: '1px solid #2d7ef7', borderRadius: 10, background: 'rgba(45,126,247,0.06)' }}>
-          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>{result.label}</div>
-          <div style={{ color:'#555' }}>{result.note}</div>
+        {/* 최종 한 줄 요약 박스 */}
+        <div style={{
+          padding:16,
+          border:'1px solid #2d7ef7',
+          borderRadius:10,
+          background:'rgba(45,126,247,0.06)'
+        }}>
+          <div style={{ fontSize:18, fontWeight:700, marginBottom:6 }}>
+            {report.headline}
+          </div>
+          <div style={{ color:'#555', fontSize:14, lineHeight:1.4 }}>
+            {report.subNote}
+          </div>
         </div>
 
-        <div style={{ marginTop: 12, padding: 12, border: '1px solid #e5e7eb', borderRadius: 10 }}>
-          <div>총 문항: {total}</div>
-          <div>평균 응답 시간: {result.avgMs} ms</div>
-          <div>오답(또는 미응답): Deutan {result.deutanWrong} / Protan {result.protanWrong} / Control {result.controlWrong}</div>
-        </div>
-
-        <details style={{ marginTop: 10 }}>
-          <summary>상세 보기</summary>
-          <ul style={{ marginTop: 8 }}>
-            {answers.map((a,i)=>(
-              <li key={a.id} style={{ fontFamily:'monospace' }}>
-                #{i+1} [{a.type}] target={a.answer} input={a.input || '(미응답)'} correct={String(a.correct)} time={a.ms}ms Δ={a.delta}
+        {/* 디버그/개발용 상세(원하면 숨겨도 됨) */}
+        <details style={{ marginTop:16 }}>
+          <summary>상세 보기 (개별 응답 로그)</summary>
+          <ul style={{ marginTop:8 }}>
+            {report.answers.map((a,i)=>(
+              <li
+                key={i}
+                style={{
+                  fontFamily:'monospace',
+                  fontSize:12,
+                  lineHeight:1.5
+                }}
+              >
+                #{i+1}
+                {' '}axis={a.axis}
+                {' '}diff={a.difficulty}
+                {' '}pal={a.palette}
+                {' '}pick={a.pickIndex ?? '(미응답)'}
+                {' '}correct={String(a.correct)}
+                {' '}ms={a.ms}
+                {' '}trueIdx={a.diffIndex}
               </li>
             ))}
           </ul>
         </details>
 
-        <div style={{ display:'flex', gap: 8, marginTop: 12 }}>
-          <button onClick={restart} style={btn('#2d7ef7')}>다시 시작</button>
-          <button onClick={()=>downloadJSON({answers, result})} style={btn('#10b981')}>결과 JSON 다운로드</button>
+        <div style={{ display:'flex', gap:8, marginTop:16 }}>
+          <button onClick={restart} style={btn('#2d7ef7')}>
+            다시 시작
+          </button>
+          <button
+            onClick={()=>downloadJSON(report)}
+            style={btn('#10b981')}
+          >
+            결과 JSON 다운로드
+          </button>
         </div>
+
+        <p style={{ marginTop:20, fontSize:12, color:'#888', lineHeight:1.4 }}>
+          ※ 본 도구는 시험용 프로토타입입니다. 의료적 진단이 아닙니다.
+        </p>
       </div>
-    )
+    );
   }
 
-  // 진행 화면
-  const plateSeed = idx + 1
+  // 진행 중 화면
   return (
-    <div style={{ maxWidth: 760 }}>
+    <div style={{ maxWidth:760 }}>
       <div style={{ display:'flex', alignItems:'baseline', gap:12 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>문항 #{idx+1} / {total}</h2>
+        <h2 style={{ fontSize:22, fontWeight:800, margin:0 }}>
+          문항 #{idx+1} / {total}
+        </h2>
         <span style={{ color:'#888' }}>남은 시간: {remaining}s</span>
       </div>
-      <p style={{ marginTop: 6, color:'#ccc' }}>보이는 숫자를 입력하세요. (정확한 진단이 아닌 시연용입니다)</p>
 
-      <IshiharaPlate
-        size={420}
-        answer={q.answer}
-        delta={q.delta}
-        paletteKey={q.paletteKey}
-        seed={plateSeed}
+      <p style={{ marginTop:6, color:'#ccc', fontSize:14, lineHeight:1.4 }}>
+        3x3 격자 중 다른 색으로 보이는 칸을 직접 클릭하세요.
+        (좌상단=0, 우하단=8)
+      </p>
+
+      <canvas
+        ref={canvasRef}
+        width={360}
+        height={360}
+        onClick={handleCanvasClick}
+        style={{
+          width:360,
+          height:360,
+          borderRadius:8,
+          border:'1px solid #444',
+          display:'block',
+          background:'#111',
+          cursor:'pointer'
+        }}
       />
 
-      <div style={{ display:'flex', gap:8, marginTop: 12 }}>
-        <input
-          value={input}
-          onChange={(e)=>setInput(e.target.value)}
-          placeholder="예: 12"
-          maxLength={2}
-          style={{ border:'1px solid #374151', background:'#111', color:'#eee', borderRadius:8, padding:'8px 10px', width:120 }}
-        />
-        <button onClick={()=>submit(input)} style={btn('#2d7ef7')}>제출</button>
-        <button onClick={()=>submit('')} style={btn('#f59e0b')}>모르겠음</button>
+      <div style={{ marginTop:12, color:'#aaa', fontSize:13, lineHeight:1.4 }}>
+        <div>인덱스 배열 예시</div>
+        <div style={{ fontFamily:'monospace', fontSize:12 }}>
+          0 1 2<br/>3 4 5<br/>6 7 8
+        </div>
+      </div>
+
+      <div style={{ marginTop:16 }}>
+        <button
+          onClick={()=>submitAnswer(null)}
+          style={btn('#f59e0b')}
+        >
+          모르겠음 / 너무 비슷함
+        </button>
+      </div>
+
+      <div style={{ marginTop:12, color:'#666', fontSize:12, lineHeight:1.4 }}>
+        ※ 이 테스트는 의학적 진단용이 아니며, 결과는 참고용입니다.
       </div>
     </div>
-  )
+  );
 }
 
-/* --------------- 헬퍼 --------------- */
-function btn(bg){ return { background:bg, color:'#fff', border:0, padding:'9px 14px', borderRadius:8, cursor:'pointer' } }
-function downloadJSON(payload){
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href=url; a.download='ishihara_like_result.json'; a.click()
-  URL.revokeObjectURL(url)
+/* ===================== 헬퍼 스타일 ===================== */
+function btn(bg){
+  return {
+    background:bg,
+    color:'#fff',
+    border:0,
+    padding:'9px 14px',
+    borderRadius:8,
+    cursor:'pointer',
+    fontSize:14,
+    lineHeight:1.2
+  };
 }
