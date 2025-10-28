@@ -1,0 +1,42 @@
+services:
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: dockerfile.backend
+    ports:
+      - "5000:3000"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongo:27017/mydb
+      - NODE_ENV=development
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: .
+      dockerfile: dockerfile.frontend
+    ports:
+      - "5173:5173"
+    volumes:
+    - .:/app
+    - /app/node_modules
+    depends_on:
+      - backend
+
+
+volumes:
+  mongo_data:
