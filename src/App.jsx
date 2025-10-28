@@ -1,6 +1,7 @@
 import { Routes, Route, Link } from 'react-router-dom'
 import Home from './pages/Home.jsx'
 import Upload from './pages/Upload.jsx'
+import Result from './pages/Result.jsx'
 import Test from './pages/Test.jsx'
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/upload" element={<Upload />} />
+        <Route path="/result" element={<Result />} />
         <Route path="/test" element={<Test />} />
       </Routes>
     </div>

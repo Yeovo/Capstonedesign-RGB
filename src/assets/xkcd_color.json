@@ -1,0 +1,3694 @@
+[
+  {
+    "english": "cloudy blue",
+    "code": "#acc2d9"
+  },
+  {
+    "english": "dark pastel green",
+    "code": "#56ae57"
+  },
+  {
+    "english": "dust",
+    "code": "#b2996e"
+  },
+  {
+    "english": "electric lime",
+    "code": "#a8ff04"
+  },
+  {
+    "english": "fresh green",
+    "code": "#69d84f"
+  },
+  {
+    "english": "light eggplant",
+    "code": "#894585"
+  },
+  {
+    "english": "really light blue",
+    "code": "#d4ffff"
+  },
+  {
+    "english": "tea",
+    "code": "#65ab7c"
+  },
+  {
+    "english": "warm purple",
+    "code": "#952e8f"
+  },
+  {
+    "english": "yellowish tan",
+    "code": "#fcfc81"
+  },
+  {
+    "english": "cement",
+    "code": "#a5a391"
+  },
+  {
+    "english": "dark grass green",
+    "code": "#388004"
+  },
+  {
+    "english": "dusty teal",
+    "code": "#4c9085"
+  },
+  {
+    "english": "grey teal",
+    "code": "#5e9b8a"
+  },
+  {
+    "english": "macaroni and cheese",
+    "code": "#efb435"
+  },
+  {
+    "english": "pinkish tan",
+    "code": "#d99b82"
+  },
+  {
+    "english": "spruce",
+    "code": "#0a5f38"
+  },
+  {
+    "english": "strong blue",
+    "code": "#0c06f7"
+  },
+  {
+    "english": "windows blue",
+    "code": "#3778bf"
+  },
+  {
+    "english": "blue blue",
+    "code": "#2242c7"
+  },
+  {
+    "english": "blue with a hint of purple",
+    "code": "#533cc6"
+  },
+  {
+    "english": "bright sea green",
+    "code": "#05ffa6"
+  },
+  {
+    "english": "dark green blue",
+    "code": "#1f6357"
+  },
+  {
+    "english": "deep turquoise",
+    "code": "#017374"
+  },
+  {
+    "english": "green teal",
+    "code": "#0cb577"
+  },
+  {
+    "english": "strong pink",
+    "code": "#ff0789"
+  },
+  {
+    "english": "bland",
+    "code": "#afa88b"
+  },
+  {
+    "english": "deep aqua",
+    "code": "#08787f"
+  },
+  {
+    "english": "lavender pink",
+    "code": "#dd85d7"
+  },
+  {
+    "english": "light moss green",
+    "code": "#a6c875"
+  },
+  {
+    "english": "light seafoam green",
+    "code": "#a7ffb5"
+  },
+  {
+    "english": "olive yellow",
+    "code": "#c2b709"
+  },
+  {
+    "english": "pig pink",
+    "code": "#e78ea5"
+  },
+  {
+    "english": "deep lilac",
+    "code": "#966ebd"
+  },
+  {
+    "english": "desert",
+    "code": "#ccad60"
+  },
+  {
+    "english": "dusty lavender",
+    "code": "#ac86a8"
+  },
+  {
+    "english": "purpley grey",
+    "code": "#947e94"
+  },
+  {
+    "english": "purply",
+    "code": "#983fb2"
+  },
+  {
+    "english": "candy pink",
+    "code": "#ff63e9"
+  },
+  {
+    "english": "light pastel green",
+    "code": "#b2fba5"
+  },
+  {
+    "english": "boring green",
+    "code": "#63b365"
+  },
+  {
+    "english": "kiwi green",
+    "code": "#8ee53f"
+  },
+  {
+    "english": "light grey green",
+    "code": "#b7e1a1"
+  },
+  {
+    "english": "orange pink",
+    "code": "#ff6f52"
+  },
+  {
+    "english": "tea green",
+    "code": "#bdf8a3"
+  },
+  {
+    "english": "very light brown",
+    "code": "#d3b683"
+  },
+  {
+    "english": "egg shell",
+    "code": "#fffcc4"
+  },
+  {
+    "english": "eggplant purple",
+    "code": "#430541"
+  },
+  {
+    "english": "powder pink",
+    "code": "#ffb2d0"
+  },
+  {
+    "english": "reddish grey",
+    "code": "#997570"
+  },
+  {
+    "english": "liliac",
+    "code": "#c48efd"
+  },
+  {
+    "english": "stormy blue",
+    "code": "#507b9c"
+  },
+  {
+    "english": "custard",
+    "code": "#fffd78"
+  },
+  {
+    "english": "darkish pink",
+    "code": "#da467d"
+  },
+  {
+    "english": "deep brown",
+    "code": "#410200"
+  },
+  {
+    "english": "greenish beige",
+    "code": "#c9d179"
+  },
+  {
+    "english": "manilla",
+    "code": "#fffa86"
+  },
+  {
+    "english": "off blue",
+    "code": "#5684ae"
+  },
+  {
+    "english": "battleship grey",
+    "code": "#6b7c85"
+  },
+  {
+    "english": "browny green",
+    "code": "#6f6c0a"
+  },
+  {
+    "english": "bruise",
+    "code": "#7e4071"
+  },
+  {
+    "english": "kelley green",
+    "code": "#009337"
+  },
+  {
+    "english": "sickly yellow",
+    "code": "#d0e429"
+  },
+  {
+    "english": "sunny yellow",
+    "code": "#fff917"
+  },
+  {
+    "english": "azul",
+    "code": "#1d5dec"
+  },
+  {
+    "english": "darkgreen",
+    "code": "#054907"
+  },
+  {
+    "english": "green/yellow",
+    "code": "#b5ce08"
+  },
+  {
+    "english": "lichen",
+    "code": "#8fb67b"
+  },
+  {
+    "english": "light light green",
+    "code": "#c8ffb0"
+  },
+  {
+    "english": "pale gold",
+    "code": "#fdde6c"
+  },
+  {
+    "english": "sun yellow",
+    "code": "#ffdf22"
+  },
+  {
+    "english": "tan green",
+    "code": "#a9be70"
+  },
+  {
+    "english": "burple",
+    "code": "#6832e3"
+  },
+  {
+    "english": "butterscotch",
+    "code": "#fdb147"
+  },
+  {
+    "english": "toupe",
+    "code": "#c7ac7d"
+  },
+  {
+    "english": "dark cream",
+    "code": "#fff39a"
+  },
+  {
+    "english": "indian red",
+    "code": "#850e04"
+  },
+  {
+    "english": "light lavendar",
+    "code": "#efc0fe"
+  },
+  {
+    "english": "bright yellow green",
+    "code": "#9dff00"
+  },
+  {
+    "english": "charcoal grey",
+    "code": "#3c4142"
+  },
+  {
+    "english": "squash",
+    "code": "#f2ab15"
+  },
+  {
+    "english": "cinnamon",
+    "code": "#ac4f06"
+  },
+  {
+    "english": "light pea green",
+    "code": "#c4fe82"
+  },
+  {
+    "english": "raw sienna",
+    "code": "#9a6200"
+  },
+  {
+    "english": "baby purple",
+    "code": "#ca9bf7"
+  },
+  {
+    "english": "cocoa",
+    "code": "#875f42"
+  },
+  {
+    "english": "light royal blue",
+    "code": "#3a2efe"
+  },
+  {
+    "english": "orangeish",
+    "code": "#fd8d49"
+  },
+  {
+    "english": "rust brown",
+    "code": "#8b3103"
+  },
+  {
+    "english": "sand brown",
+    "code": "#cba560"
+  },
+  {
+    "english": "swamp",
+    "code": "#698339"
+  },
+  {
+    "english": "tealish green",
+    "code": "#0cdc73"
+  },
+  {
+    "english": "burnt siena",
+    "code": "#b75203"
+  },
+  {
+    "english": "camo",
+    "code": "#7f8f4e"
+  },
+  {
+    "english": "dusk blue",
+    "code": "#26538d"
+  },
+  {
+    "english": "fern",
+    "code": "#63a950"
+  },
+  {
+    "english": "old rose",
+    "code": "#c87f89"
+  },
+  {
+    "english": "pale light green",
+    "code": "#b1fc99"
+  },
+  {
+    "english": "peachy pink",
+    "code": "#ff9a8a"
+  },
+  {
+    "english": "rosy pink",
+    "code": "#f6688e"
+  },
+  {
+    "english": "light bluish green",
+    "code": "#76fda8"
+  },
+  {
+    "english": "light bright green",
+    "code": "#53fe5c"
+  },
+  {
+    "english": "light neon green",
+    "code": "#4efd54"
+  },
+  {
+    "english": "light seafoam",
+    "code": "#a0febf"
+  },
+  {
+    "english": "tiffany blue",
+    "code": "#7bf2da"
+  },
+  {
+    "english": "washed out green",
+    "code": "#bcf5a6"
+  },
+  {
+    "english": "browny orange",
+    "code": "#ca6b02"
+  },
+  {
+    "english": "nice blue",
+    "code": "#107ab0"
+  },
+  {
+    "english": "sapphire",
+    "code": "#2138ab"
+  },
+  {
+    "english": "greyish teal",
+    "code": "#719f91"
+  },
+  {
+    "english": "orangey yellow",
+    "code": "#fdb915"
+  },
+  {
+    "english": "parchment",
+    "code": "#fefcaf"
+  },
+  {
+    "english": "straw",
+    "code": "#fcf679"
+  },
+  {
+    "english": "very dark brown",
+    "code": "#1d0200"
+  },
+  {
+    "english": "terracota",
+    "code": "#cb6843"
+  },
+  {
+    "english": "ugly blue",
+    "code": "#31668a"
+  },
+  {
+    "english": "clear blue",
+    "code": "#247afd"
+  },
+  {
+    "english": "creme",
+    "code": "#ffffb6"
+  },
+  {
+    "english": "foam green",
+    "code": "#90fda9"
+  },
+  {
+    "english": "grey/green",
+    "code": "#86a17d"
+  },
+  {
+    "english": "light gold",
+    "code": "#fddc5c"
+  },
+  {
+    "english": "seafoam blue",
+    "code": "#78d1b6"
+  },
+  {
+    "english": "topaz",
+    "code": "#13bbaf"
+  },
+  {
+    "english": "violet pink",
+    "code": "#fb5ffc"
+  },
+  {
+    "english": "wintergreen",
+    "code": "#20f986"
+  },
+  {
+    "english": "yellow tan",
+    "code": "#ffe36e"
+  },
+  {
+    "english": "dark fuchsia",
+    "code": "#9d0759"
+  },
+  {
+    "english": "indigo blue",
+    "code": "#3a18b1"
+  },
+  {
+    "english": "light yellowish green",
+    "code": "#c2ff89"
+  },
+  {
+    "english": "pale magenta",
+    "code": "#d767ad"
+  },
+  {
+    "english": "rich purple",
+    "code": "#720058"
+  },
+  {
+    "english": "sunflower yellow",
+    "code": "#ffda03"
+  },
+  {
+    "english": "green/blue",
+    "code": "#01c08d"
+  },
+  {
+    "english": "leather",
+    "code": "#ac7434"
+  },
+  {
+    "english": "racing green",
+    "code": "#014600"
+  },
+  {
+    "english": "vivid purple",
+    "code": "#9900fa"
+  },
+  {
+    "english": "dark royal blue",
+    "code": "#02066f"
+  },
+  {
+    "english": "hazel",
+    "code": "#8e7618"
+  },
+  {
+    "english": "muted pink",
+    "code": "#d1768f"
+  },
+  {
+    "english": "booger green",
+    "code": "#96b403"
+  },
+  {
+    "english": "canary",
+    "code": "#fdff63"
+  },
+  {
+    "english": "cool grey",
+    "code": "#95a3a6"
+  },
+  {
+    "english": "dark taupe",
+    "code": "#7f684e"
+  },
+  {
+    "english": "darkish purple",
+    "code": "#751973"
+  },
+  {
+    "english": "true green",
+    "code": "#089404"
+  },
+  {
+    "english": "coral pink",
+    "code": "#ff6163"
+  },
+  {
+    "english": "dark sage",
+    "code": "#598556"
+  },
+  {
+    "english": "dark slate blue",
+    "code": "#214761"
+  },
+  {
+    "english": "flat blue",
+    "code": "#3c73a8"
+  },
+  {
+    "english": "mushroom",
+    "code": "#ba9e88"
+  },
+  {
+    "english": "rich blue",
+    "code": "#021bf9"
+  },
+  {
+    "english": "dirty purple",
+    "code": "#734a65"
+  },
+  {
+    "english": "greenblue",
+    "code": "#23c48b"
+  },
+  {
+    "english": "icky green",
+    "code": "#8fae22"
+  },
+  {
+    "english": "light khaki",
+    "code": "#e6f2a2"
+  },
+  {
+    "english": "warm blue",
+    "code": "#4b57db"
+  },
+  {
+    "english": "dark hot pink",
+    "code": "#d90166"
+  },
+  {
+    "english": "deep sea blue",
+    "code": "#015482"
+  },
+  {
+    "english": "carmine",
+    "code": "#9d0216"
+  },
+  {
+    "english": "dark yellow green",
+    "code": "#728f02"
+  },
+  {
+    "english": "pale peach",
+    "code": "#ffe5ad"
+  },
+  {
+    "english": "plum purple",
+    "code": "#4e0550"
+  },
+  {
+    "english": "golden rod",
+    "code": "#f9bc08"
+  },
+  {
+    "english": "neon red",
+    "code": "#ff073a"
+  },
+  {
+    "english": "old pink",
+    "code": "#c77986"
+  },
+  {
+    "english": "very pale blue",
+    "code": "#d6fffe"
+  },
+  {
+    "english": "blood orange",
+    "code": "#fe4b03"
+  },
+  {
+    "english": "grapefruit",
+    "code": "#fd5956"
+  },
+  {
+    "english": "sand yellow",
+    "code": "#fce166"
+  },
+  {
+    "english": "clay brown",
+    "code": "#b2713d"
+  },
+  {
+    "english": "dark blue grey",
+    "code": "#1f3b4d"
+  },
+  {
+    "english": "flat green",
+    "code": "#699d4c"
+  },
+  {
+    "english": "light green blue",
+    "code": "#56fca2"
+  },
+  {
+    "english": "warm pink",
+    "code": "#fb5581"
+  },
+  {
+    "english": "dodger blue",
+    "code": "#3e82fc"
+  },
+  {
+    "english": "ice",
+    "code": "#d6fffa"
+  },
+  {
+    "english": "metallic blue",
+    "code": "#4f738e"
+  },
+  {
+    "english": "pale salmon",
+    "code": "#ffb19a"
+  },
+  {
+    "english": "sap green",
+    "code": "#5c8b15"
+  },
+  {
+    "english": "algae",
+    "code": "#54ac68"
+  },
+  {
+    "english": "bluey grey",
+    "code": "#89a0b0"
+  },
+  {
+    "english": "greeny grey",
+    "code": "#7ea07a"
+  },
+  {
+    "english": "highlighter green",
+    "code": "#1bfc06"
+  },
+  {
+    "english": "light light blue",
+    "code": "#cafffb"
+  },
+  {
+    "english": "light mint",
+    "code": "#b6ffbb"
+  },
+  {
+    "english": "raw umber",
+    "code": "#a75e09"
+  },
+  {
+    "english": "vivid blue",
+    "code": "#152eff"
+  },
+  {
+    "english": "deep lavender",
+    "code": "#8d5eb7"
+  },
+  {
+    "english": "dull teal",
+    "code": "#5f9e8f"
+  },
+  {
+    "english": "light greenish blue",
+    "code": "#63f7b4"
+  },
+  {
+    "english": "mud green",
+    "code": "#606602"
+  },
+  {
+    "english": "pinky",
+    "code": "#fc86aa"
+  },
+  {
+    "english": "red wine",
+    "code": "#8c0034"
+  },
+  {
+    "english": "tan brown",
+    "code": "#ab7e4c"
+  },
+  {
+    "english": "darkblue",
+    "code": "#030764"
+  },
+  {
+    "english": "rosa",
+    "code": "#fe86a4"
+  },
+  {
+    "english": "lipstick",
+    "code": "#d5174e"
+  },
+  {
+    "english": "pale mauve",
+    "code": "#fed0fc"
+  },
+  {
+    "english": "claret",
+    "code": "#680018"
+  },
+  {
+    "english": "dandelion",
+    "code": "#fedf08"
+  },
+  {
+    "english": "orangered",
+    "code": "#fe420f"
+  },
+  {
+    "english": "ruby",
+    "code": "#ca0147"
+  },
+  {
+    "english": "dark",
+    "code": "#1b2431"
+  },
+  {
+    "english": "greenish turquoise",
+    "code": "#00fbb0"
+  },
+  {
+    "english": "pastel red",
+    "code": "#db5856"
+  },
+  {
+    "english": "piss yellow",
+    "code": "#ddd618"
+  },
+  {
+    "english": "bright cyan",
+    "code": "#41fdfe"
+  },
+  {
+    "english": "dark coral",
+    "code": "#cf524e"
+  },
+  {
+    "english": "algae green",
+    "code": "#21c36f"
+  },
+  {
+    "english": "darkish red",
+    "code": "#a90308"
+  },
+  {
+    "english": "reddy brown",
+    "code": "#6e1005"
+  },
+  {
+    "english": "blush pink",
+    "code": "#fe828c"
+  },
+  {
+    "english": "camouflage green",
+    "code": "#4b6113"
+  },
+  {
+    "english": "lawn green",
+    "code": "#4da409"
+  },
+  {
+    "english": "putty",
+    "code": "#beae8a"
+  },
+  {
+    "english": "vibrant blue",
+    "code": "#0339f8"
+  },
+  {
+    "english": "dark sand",
+    "code": "#a88f59"
+  },
+  {
+    "english": "purple/blue",
+    "code": "#5d21d0"
+  },
+  {
+    "english": "saffron",
+    "code": "#feb209"
+  },
+  {
+    "english": "twilight",
+    "code": "#4e518b"
+  },
+  {
+    "english": "warm brown",
+    "code": "#964e02"
+  },
+  {
+    "english": "bluegrey",
+    "code": "#85a3b2"
+  },
+  {
+    "english": "bubble gum pink",
+    "code": "#ff69af"
+  },
+  {
+    "english": "duck egg blue",
+    "code": "#c3fbf4"
+  },
+  {
+    "english": "greenish cyan",
+    "code": "#2afeb7"
+  },
+  {
+    "english": "petrol",
+    "code": "#005f6a"
+  },
+  {
+    "english": "royal",
+    "code": "#0c1793"
+  },
+  {
+    "english": "butter",
+    "code": "#ffff81"
+  },
+  {
+    "english": "dusty orange",
+    "code": "#f0833a"
+  },
+  {
+    "english": "off yellow",
+    "code": "#f1f33f"
+  },
+  {
+    "english": "pale olive green",
+    "code": "#b1d27b"
+  },
+  {
+    "english": "orangish",
+    "code": "#fc824a"
+  },
+  {
+    "english": "leaf",
+    "code": "#71aa34"
+  },
+  {
+    "english": "light blue grey",
+    "code": "#b7c9e2"
+  },
+  {
+    "english": "dried blood",
+    "code": "#4b0101"
+  },
+  {
+    "english": "lightish purple",
+    "code": "#a552e6"
+  },
+  {
+    "english": "rusty red",
+    "code": "#af2f0d"
+  },
+  {
+    "english": "lavender blue",
+    "code": "#8b88f8"
+  },
+  {
+    "english": "light grass green",
+    "code": "#9af764"
+  },
+  {
+    "english": "light mint green",
+    "code": "#a6fbb2"
+  },
+  {
+    "english": "sunflower",
+    "code": "#ffc512"
+  },
+  {
+    "english": "velvet",
+    "code": "#750851"
+  },
+  {
+    "english": "brick orange",
+    "code": "#c14a09"
+  },
+  {
+    "english": "lightish red",
+    "code": "#fe2f4a"
+  },
+  {
+    "english": "pure blue",
+    "code": "#0203e2"
+  },
+  {
+    "english": "twilight blue",
+    "code": "#0a437a"
+  },
+  {
+    "english": "violet red",
+    "code": "#a50055"
+  },
+  {
+    "english": "yellowy brown",
+    "code": "#ae8b0c"
+  },
+  {
+    "english": "carnation",
+    "code": "#fd798f"
+  },
+  {
+    "english": "muddy yellow",
+    "code": "#bfac05"
+  },
+  {
+    "english": "dark seafoam green",
+    "code": "#3eaf76"
+  },
+  {
+    "english": "deep rose",
+    "code": "#c74767"
+  },
+  {
+    "english": "dusty red",
+    "code": "#b9484e"
+  },
+  {
+    "english": "grey/blue",
+    "code": "#647d8e"
+  },
+  {
+    "english": "lemon lime",
+    "code": "#bffe28"
+  },
+  {
+    "english": "purple/pink",
+    "code": "#d725de"
+  },
+  {
+    "english": "brown yellow",
+    "code": "#b29705"
+  },
+  {
+    "english": "purple brown",
+    "code": "#673a3f"
+  },
+  {
+    "english": "wisteria",
+    "code": "#a87dc2"
+  },
+  {
+    "english": "banana yellow",
+    "code": "#fafe4b"
+  },
+  {
+    "english": "lipstick red",
+    "code": "#c0022f"
+  },
+  {
+    "english": "water blue",
+    "code": "#0e87cc"
+  },
+  {
+    "english": "brown grey",
+    "code": "#8d8468"
+  },
+  {
+    "english": "vibrant purple",
+    "code": "#ad03de"
+  },
+  {
+    "english": "baby green",
+    "code": "#8cff9e"
+  },
+  {
+    "english": "eggshell blue",
+    "code": "#c4fff7"
+  },
+  {
+    "english": "sandy yellow",
+    "code": "#fdee73"
+  },
+  {
+    "english": "cool green",
+    "code": "#33b864"
+  },
+  {
+    "english": "pale",
+    "code": "#fff9d0"
+  },
+  {
+    "english": "blue/grey",
+    "code": "#758da3"
+  },
+  {
+    "english": "hot magenta",
+    "code": "#f504c9"
+  },
+  {
+    "english": "greyblue",
+    "code": "#77a1b5"
+  },
+  {
+    "english": "purpley",
+    "code": "#8756e4"
+  },
+  {
+    "english": "brownish pink",
+    "code": "#c27e79"
+  },
+  {
+    "english": "dark aquamarine",
+    "code": "#017371"
+  },
+  {
+    "english": "light mustard",
+    "code": "#f7d560"
+  },
+  {
+    "english": "pale sky blue",
+    "code": "#bdf6fe"
+  },
+  {
+    "english": "turtle green",
+    "code": "#75b84f"
+  },
+  {
+    "english": "bright olive",
+    "code": "#9cbb04"
+  },
+  {
+    "english": "dark grey blue",
+    "code": "#29465b"
+  },
+  {
+    "english": "greeny brown",
+    "code": "#696006"
+  },
+  {
+    "english": "lemon green",
+    "code": "#adf802"
+  },
+  {
+    "english": "light periwinkle",
+    "code": "#c1c6fc"
+  },
+  {
+    "english": "seaweed green",
+    "code": "#35ad6b"
+  },
+  {
+    "english": "sunshine yellow",
+    "code": "#fffd37"
+  },
+  {
+    "english": "ugly purple",
+    "code": "#a442a0"
+  },
+  {
+    "english": "medium pink",
+    "code": "#f36196"
+  },
+  {
+    "english": "very light pink",
+    "code": "#fff4f2"
+  },
+  {
+    "english": "viridian",
+    "code": "#1e9167"
+  },
+  {
+    "english": "faded yellow",
+    "code": "#feff7f"
+  },
+  {
+    "english": "very pale green",
+    "code": "#cffdbc"
+  },
+  {
+    "english": "vibrant green",
+    "code": "#0add08"
+  },
+  {
+    "english": "bright lime",
+    "code": "#87fd05"
+  },
+  {
+    "english": "spearmint",
+    "code": "#1ef876"
+  },
+  {
+    "english": "light aquamarine",
+    "code": "#7bfdc7"
+  },
+  {
+    "english": "light sage",
+    "code": "#bcecac"
+  },
+  {
+    "english": "yellowgreen",
+    "code": "#bbf90f"
+  },
+  {
+    "english": "dark seafoam",
+    "code": "#1fb57a"
+  },
+  {
+    "english": "deep teal",
+    "code": "#00555a"
+  },
+  {
+    "english": "heather",
+    "code": "#a484ac"
+  },
+  {
+    "english": "rust orange",
+    "code": "#c45508"
+  },
+  {
+    "english": "dirty blue",
+    "code": "#3f829d"
+  },
+  {
+    "english": "fern green",
+    "code": "#548d44"
+  },
+  {
+    "english": "bright lilac",
+    "code": "#c95efb"
+  },
+  {
+    "english": "weird green",
+    "code": "#3ae57f"
+  },
+  {
+    "english": "peacock blue",
+    "code": "#016795"
+  },
+  {
+    "english": "avocado green",
+    "code": "#87a922"
+  },
+  {
+    "english": "faded orange",
+    "code": "#f0944d"
+  },
+  {
+    "english": "grape purple",
+    "code": "#5d1451"
+  },
+  {
+    "english": "hot green",
+    "code": "#25ff29"
+  },
+  {
+    "english": "lime yellow",
+    "code": "#d0fe1d"
+  },
+  {
+    "english": "mango",
+    "code": "#ffa62b"
+  },
+  {
+    "english": "shamrock",
+    "code": "#01b44c"
+  },
+  {
+    "english": "bubblegum",
+    "code": "#ff6cb5"
+  },
+  {
+    "english": "purplish brown",
+    "code": "#6b4247"
+  },
+  {
+    "english": "pale cyan",
+    "code": "#b7fffa"
+  },
+  {
+    "english": "key lime",
+    "code": "#aeff6e"
+  },
+  {
+    "english": "tomato red",
+    "code": "#ec2d01"
+  },
+  {
+    "english": "lightgreen",
+    "code": "#76ff7b"
+  },
+  {
+    "english": "merlot",
+    "code": "#730039"
+  },
+  {
+    "english": "night blue",
+    "code": "#040348"
+  },
+  {
+    "english": "purpleish pink",
+    "code": "#df4ec8"
+  },
+  {
+    "english": "apple",
+    "code": "#6ecb3c"
+  },
+  {
+    "english": "green apple",
+    "code": "#5edc1f"
+  },
+  {
+    "english": "heliotrope",
+    "code": "#d94ff5"
+  },
+  {
+    "english": "yellow/green",
+    "code": "#c8fd3d"
+  },
+  {
+    "english": "almost black",
+    "code": "#070d0d"
+  },
+  {
+    "english": "cool blue",
+    "code": "#4984b8"
+  },
+  {
+    "english": "leafy green",
+    "code": "#51b73b"
+  },
+  {
+    "english": "mustard brown",
+    "code": "#ac7e04"
+  },
+  {
+    "english": "dusk",
+    "code": "#4e5481"
+  },
+  {
+    "english": "dull brown",
+    "code": "#876e4b"
+  },
+  {
+    "english": "frog green",
+    "code": "#58bc08"
+  },
+  {
+    "english": "vivid green",
+    "code": "#2fef10"
+  },
+  {
+    "english": "bright light green",
+    "code": "#2dfe54"
+  },
+  {
+    "english": "fluro green",
+    "code": "#0aff02"
+  },
+  {
+    "english": "kiwi",
+    "code": "#9cef43"
+  },
+  {
+    "english": "seaweed",
+    "code": "#18d17b"
+  },
+  {
+    "english": "navy green",
+    "code": "#35530a"
+  },
+  {
+    "english": "ultramarine blue",
+    "code": "#1805db"
+  },
+  {
+    "english": "iris",
+    "code": "#6258c4"
+  },
+  {
+    "english": "pastel orange",
+    "code": "#ff964f"
+  },
+  {
+    "english": "yellowish orange",
+    "code": "#ffab0f"
+  },
+  {
+    "english": "perrywinkle",
+    "code": "#8f8ce7"
+  },
+  {
+    "english": "tealish",
+    "code": "#24bca8"
+  },
+  {
+    "english": "dark plum",
+    "code": "#3f012c"
+  },
+  {
+    "english": "pear",
+    "code": "#cbf85f"
+  },
+  {
+    "english": "pinkish orange",
+    "code": "#ff724c"
+  },
+  {
+    "english": "midnight purple",
+    "code": "#280137"
+  },
+  {
+    "english": "light urple",
+    "code": "#b36ff6"
+  },
+  {
+    "english": "dark mint",
+    "code": "#48c072"
+  },
+  {
+    "english": "greenish tan",
+    "code": "#bccb7a"
+  },
+  {
+    "english": "light burgundy",
+    "code": "#a8415b"
+  },
+  {
+    "english": "turquoise blue",
+    "code": "#06b1c4"
+  },
+  {
+    "english": "ugly pink",
+    "code": "#cd7584"
+  },
+  {
+    "english": "sandy",
+    "code": "#f1da7a"
+  },
+  {
+    "english": "electric pink",
+    "code": "#ff0490"
+  },
+  {
+    "english": "muted purple",
+    "code": "#805b87"
+  },
+  {
+    "english": "mid green",
+    "code": "#50a747"
+  },
+  {
+    "english": "greyish",
+    "code": "#a8a495"
+  },
+  {
+    "english": "neon yellow",
+    "code": "#cfff04"
+  },
+  {
+    "english": "banana",
+    "code": "#ffff7e"
+  },
+  {
+    "english": "carnation pink",
+    "code": "#ff7fa7"
+  },
+  {
+    "english": "tomato",
+    "code": "#ef4026"
+  },
+  {
+    "english": "sea",
+    "code": "#3c9992"
+  },
+  {
+    "english": "muddy brown",
+    "code": "#886806"
+  },
+  {
+    "english": "turquoise green",
+    "code": "#04f489"
+  },
+  {
+    "english": "buff",
+    "code": "#fef69e"
+  },
+  {
+    "english": "fawn",
+    "code": "#cfaf7b"
+  },
+  {
+    "english": "muted blue",
+    "code": "#3b719f"
+  },
+  {
+    "english": "pale rose",
+    "code": "#fdc1c5"
+  },
+  {
+    "english": "dark mint green",
+    "code": "#20c073"
+  },
+  {
+    "english": "amethyst",
+    "code": "#9b5fc0"
+  },
+  {
+    "english": "blue/green",
+    "code": "#0f9b8e"
+  },
+  {
+    "english": "chestnut",
+    "code": "#742802"
+  },
+  {
+    "english": "sick green",
+    "code": "#9db92c"
+  },
+  {
+    "english": "pea",
+    "code": "#a4bf20"
+  },
+  {
+    "english": "rusty orange",
+    "code": "#cd5909"
+  },
+  {
+    "english": "stone",
+    "code": "#ada587"
+  },
+  {
+    "english": "rose red",
+    "code": "#be013c"
+  },
+  {
+    "english": "pale aqua",
+    "code": "#b8ffeb"
+  },
+  {
+    "english": "deep orange",
+    "code": "#dc4d01"
+  },
+  {
+    "english": "earth",
+    "code": "#a2653e"
+  },
+  {
+    "english": "mossy green",
+    "code": "#638b27"
+  },
+  {
+    "english": "grassy green",
+    "code": "#419c03"
+  },
+  {
+    "english": "pale lime green",
+    "code": "#b1ff65"
+  },
+  {
+    "english": "light grey blue",
+    "code": "#9dbcd4"
+  },
+  {
+    "english": "pale grey",
+    "code": "#fdfdfe"
+  },
+  {
+    "english": "asparagus",
+    "code": "#77ab56"
+  },
+  {
+    "english": "blueberry",
+    "code": "#464196"
+  },
+  {
+    "english": "purple red",
+    "code": "#990147"
+  },
+  {
+    "english": "pale lime",
+    "code": "#befd73"
+  },
+  {
+    "english": "greenish teal",
+    "code": "#32bf84"
+  },
+  {
+    "english": "caramel",
+    "code": "#af6f09"
+  },
+  {
+    "english": "deep magenta",
+    "code": "#a0025c"
+  },
+  {
+    "english": "light peach",
+    "code": "#ffd8b1"
+  },
+  {
+    "english": "milk chocolate",
+    "code": "#7f4e1e"
+  },
+  {
+    "english": "ocher",
+    "code": "#bf9b0c"
+  },
+  {
+    "english": "off green",
+    "code": "#6ba353"
+  },
+  {
+    "english": "purply pink",
+    "code": "#f075e6"
+  },
+  {
+    "english": "lightblue",
+    "code": "#7bc8f6"
+  },
+  {
+    "english": "dusky blue",
+    "code": "#475f94"
+  },
+  {
+    "english": "golden",
+    "code": "#f5bf03"
+  },
+  {
+    "english": "light beige",
+    "code": "#fffeb6"
+  },
+  {
+    "english": "butter yellow",
+    "code": "#fffd74"
+  },
+  {
+    "english": "dusky purple",
+    "code": "#895b7b"
+  },
+  {
+    "english": "french blue",
+    "code": "#436bad"
+  },
+  {
+    "english": "ugly yellow",
+    "code": "#d0c101"
+  },
+  {
+    "english": "greeny yellow",
+    "code": "#c6f808"
+  },
+  {
+    "english": "orangish red",
+    "code": "#f43605"
+  },
+  {
+    "english": "shamrock green",
+    "code": "#02c14d"
+  },
+  {
+    "english": "orangish brown",
+    "code": "#b25f03"
+  },
+  {
+    "english": "tree green",
+    "code": "#2a7e19"
+  },
+  {
+    "english": "deep violet",
+    "code": "#490648"
+  },
+  {
+    "english": "gunmetal",
+    "code": "#536267"
+  },
+  {
+    "english": "blue/purple",
+    "code": "#5a06ef"
+  },
+  {
+    "english": "cherry",
+    "code": "#cf0234"
+  },
+  {
+    "english": "sandy brown",
+    "code": "#c4a661"
+  },
+  {
+    "english": "warm grey",
+    "code": "#978a84"
+  },
+  {
+    "english": "dark indigo",
+    "code": "#1f0954"
+  },
+  {
+    "english": "midnight",
+    "code": "#03012d"
+  },
+  {
+    "english": "bluey green",
+    "code": "#2bb179"
+  },
+  {
+    "english": "grey pink",
+    "code": "#c3909b"
+  },
+  {
+    "english": "soft purple",
+    "code": "#a66fb5"
+  },
+  {
+    "english": "blood",
+    "code": "#770001"
+  },
+  {
+    "english": "brown red",
+    "code": "#922b05"
+  },
+  {
+    "english": "medium grey",
+    "code": "#7d7f7c"
+  },
+  {
+    "english": "berry",
+    "code": "#990f4b"
+  },
+  {
+    "english": "poo",
+    "code": "#8f7303"
+  },
+  {
+    "english": "purpley pink",
+    "code": "#c83cb9"
+  },
+  {
+    "english": "light salmon",
+    "code": "#fea993"
+  },
+  {
+    "english": "easter purple",
+    "code": "#c071fe"
+  },
+  {
+    "english": "light yellow green",
+    "code": "#ccfd7f"
+  },
+  {
+    "english": "dark navy blue",
+    "code": "#00022e"
+  },
+  {
+    "english": "drab",
+    "code": "#828344"
+  },
+  {
+    "english": "light rose",
+    "code": "#ffc5cb"
+  },
+  {
+    "english": "rouge",
+    "code": "#ab1239"
+  },
+  {
+    "english": "purplish red",
+    "code": "#b0054b"
+  },
+  {
+    "english": "baby poop",
+    "code": "#937c00"
+  },
+  {
+    "english": "irish green",
+    "code": "#019529"
+  },
+  {
+    "english": "pink/purple",
+    "code": "#ef1de7"
+  },
+  {
+    "english": "dark navy",
+    "code": "#000435"
+  },
+  {
+    "english": "greeny blue",
+    "code": "#42b395"
+  },
+  {
+    "english": "light plum",
+    "code": "#9d5783"
+  },
+  {
+    "english": "pinkish grey",
+    "code": "#c8aca9"
+  },
+  {
+    "english": "dirty orange",
+    "code": "#c87606"
+  },
+  {
+    "english": "rust red",
+    "code": "#aa2704"
+  },
+  {
+    "english": "pale lilac",
+    "code": "#e4cbff"
+  },
+  {
+    "english": "orangey red",
+    "code": "#fa4224"
+  },
+  {
+    "english": "primary blue",
+    "code": "#0804f9"
+  },
+  {
+    "english": "kermit green",
+    "code": "#5cb200"
+  },
+  {
+    "english": "brownish purple",
+    "code": "#76424e"
+  },
+  {
+    "english": "murky green",
+    "code": "#6c7a0e"
+  },
+  {
+    "english": "wheat",
+    "code": "#fbdd7e"
+  },
+  {
+    "english": "very dark purple",
+    "code": "#2a0134"
+  },
+  {
+    "english": "bottle green",
+    "code": "#044a05"
+  },
+  {
+    "english": "watermelon",
+    "code": "#fd4659"
+  },
+  {
+    "english": "deep sky blue",
+    "code": "#0d75f8"
+  },
+  {
+    "english": "fire engine red",
+    "code": "#fe0002"
+  },
+  {
+    "english": "yellow ochre",
+    "code": "#cb9d06"
+  },
+  {
+    "english": "pumpkin orange",
+    "code": "#fb7d07"
+  },
+  {
+    "english": "pale olive",
+    "code": "#b9cc81"
+  },
+  {
+    "english": "light lilac",
+    "code": "#edc8ff"
+  },
+  {
+    "english": "lightish green",
+    "code": "#61e160"
+  },
+  {
+    "english": "carolina blue",
+    "code": "#8ab8fe"
+  },
+  {
+    "english": "mulberry",
+    "code": "#920a4e"
+  },
+  {
+    "english": "shocking pink",
+    "code": "#fe02a2"
+  },
+  {
+    "english": "auburn",
+    "code": "#9a3001"
+  },
+  {
+    "english": "bright lime green",
+    "code": "#65fe08"
+  },
+  {
+    "english": "celadon",
+    "code": "#befdb7"
+  },
+  {
+    "english": "pinkish brown",
+    "code": "#b17261"
+  },
+  {
+    "english": "poo brown",
+    "code": "#885f01"
+  },
+  {
+    "english": "bright sky blue",
+    "code": "#02ccfe"
+  },
+  {
+    "english": "celery",
+    "code": "#c1fd95"
+  },
+  {
+    "english": "dirt brown",
+    "code": "#836539"
+  },
+  {
+    "english": "strawberry",
+    "code": "#fb2943"
+  },
+  {
+    "english": "dark lime",
+    "code": "#84b701"
+  },
+  {
+    "english": "copper",
+    "code": "#b66325"
+  },
+  {
+    "english": "medium brown",
+    "code": "#7f5112"
+  },
+  {
+    "english": "muted green",
+    "code": "#5fa052"
+  },
+  {
+    "english": "robin's egg",
+    "code": "#6dedfd"
+  },
+  {
+    "english": "bright aqua",
+    "code": "#0bf9ea"
+  },
+  {
+    "english": "bright lavender",
+    "code": "#c760ff"
+  },
+  {
+    "english": "ivory",
+    "code": "#ffffcb"
+  },
+  {
+    "english": "very light purple",
+    "code": "#f6cefc"
+  },
+  {
+    "english": "light navy",
+    "code": "#155084"
+  },
+  {
+    "english": "pink red",
+    "code": "#f5054f"
+  },
+  {
+    "english": "olive brown",
+    "code": "#645403"
+  },
+  {
+    "english": "poop brown",
+    "code": "#7a5901"
+  },
+  {
+    "english": "mustard green",
+    "code": "#a8b504"
+  },
+  {
+    "english": "ocean green",
+    "code": "#3d9973"
+  },
+  {
+    "english": "very dark blue",
+    "code": "#000133"
+  },
+  {
+    "english": "dusty green",
+    "code": "#76a973"
+  },
+  {
+    "english": "light navy blue",
+    "code": "#2e5a88"
+  },
+  {
+    "english": "minty green",
+    "code": "#0bf77d"
+  },
+  {
+    "english": "adobe",
+    "code": "#bd6c48"
+  },
+  {
+    "english": "barney",
+    "code": "#ac1db8"
+  },
+  {
+    "english": "jade green",
+    "code": "#2baf6a"
+  },
+  {
+    "english": "bright light blue",
+    "code": "#26f7fd"
+  },
+  {
+    "english": "light lime",
+    "code": "#aefd6c"
+  },
+  {
+    "english": "dark khaki",
+    "code": "#9b8f55"
+  },
+  {
+    "english": "orange yellow",
+    "code": "#ffad01"
+  },
+  {
+    "english": "ocre",
+    "code": "#c69c04"
+  },
+  {
+    "english": "maize",
+    "code": "#f4d054"
+  },
+  {
+    "english": "faded pink",
+    "code": "#de9dac"
+  },
+  {
+    "english": "british racing green",
+    "code": "#05480d"
+  },
+  {
+    "english": "sandstone",
+    "code": "#c9ae74"
+  },
+  {
+    "english": "mud brown",
+    "code": "#60460f"
+  },
+  {
+    "english": "light sea green",
+    "code": "#98f6b0"
+  },
+  {
+    "english": "robin egg blue",
+    "code": "#8af1fe"
+  },
+  {
+    "english": "aqua marine",
+    "code": "#2ee8bb"
+  },
+  {
+    "english": "dark sea green",
+    "code": "#11875d"
+  },
+  {
+    "english": "soft pink",
+    "code": "#fdb0c0"
+  },
+  {
+    "english": "orangey brown",
+    "code": "#b16002"
+  },
+  {
+    "english": "cherry red",
+    "code": "#f7022a"
+  },
+  {
+    "english": "burnt yellow",
+    "code": "#d5ab09"
+  },
+  {
+    "english": "brownish grey",
+    "code": "#86775f"
+  },
+  {
+    "english": "camel",
+    "code": "#c69f59"
+  },
+  {
+    "english": "purplish grey",
+    "code": "#7a687f"
+  },
+  {
+    "english": "marine",
+    "code": "#042e60"
+  },
+  {
+    "english": "greyish pink",
+    "code": "#c88d94"
+  },
+  {
+    "english": "pale turquoise",
+    "code": "#a5fbd5"
+  },
+  {
+    "english": "pastel yellow",
+    "code": "#fffe71"
+  },
+  {
+    "english": "bluey purple",
+    "code": "#6241c7"
+  },
+  {
+    "english": "canary yellow",
+    "code": "#fffe40"
+  },
+  {
+    "english": "faded red",
+    "code": "#d3494e"
+  },
+  {
+    "english": "sepia",
+    "code": "#985e2b"
+  },
+  {
+    "english": "coffee",
+    "code": "#a6814c"
+  },
+  {
+    "english": "bright magenta",
+    "code": "#ff08e8"
+  },
+  {
+    "english": "mocha",
+    "code": "#9d7651"
+  },
+  {
+    "english": "ecru",
+    "code": "#feffca"
+  },
+  {
+    "english": "purpleish",
+    "code": "#98568d"
+  },
+  {
+    "english": "cranberry",
+    "code": "#9e003a"
+  },
+  {
+    "english": "darkish green",
+    "code": "#287c37"
+  },
+  {
+    "english": "brown orange",
+    "code": "#b96902"
+  },
+  {
+    "english": "dusky rose",
+    "code": "#ba6873"
+  },
+  {
+    "english": "melon",
+    "code": "#ff7855"
+  },
+  {
+    "english": "sickly green",
+    "code": "#94b21c"
+  },
+  {
+    "english": "silver",
+    "code": "#c5c9c7"
+  },
+  {
+    "english": "purply blue",
+    "code": "#661aee"
+  },
+  {
+    "english": "purpleish blue",
+    "code": "#6140ef"
+  },
+  {
+    "english": "hospital green",
+    "code": "#9be5aa"
+  },
+  {
+    "english": "mid blue",
+    "code": "#276ab3"
+  },
+  {
+    "english": "amber",
+    "code": "#feb308"
+  },
+  {
+    "english": "easter green",
+    "code": "#8cfd7e"
+  },
+  {
+    "english": "soft blue",
+    "code": "#6488ea"
+  },
+  {
+    "english": "cerulean blue",
+    "code": "#056eee"
+  },
+  {
+    "english": "golden brown",
+    "code": "#b27a01"
+  },
+  {
+    "english": "bright turquoise",
+    "code": "#0ffef9"
+  },
+  {
+    "english": "red pink",
+    "code": "#fa2a55"
+  },
+  {
+    "english": "red purple",
+    "code": "#820747"
+  },
+  {
+    "english": "greyish brown",
+    "code": "#7a6a4f"
+  },
+  {
+    "english": "vermillion",
+    "code": "#f4320c"
+  },
+  {
+    "english": "russet",
+    "code": "#a13905"
+  },
+  {
+    "english": "steel grey",
+    "code": "#6f828a"
+  },
+  {
+    "english": "lighter purple",
+    "code": "#a55af4"
+  },
+  {
+    "english": "bright violet",
+    "code": "#ad0afd"
+  },
+  {
+    "english": "prussian blue",
+    "code": "#004577"
+  },
+  {
+    "english": "slate green",
+    "code": "#658d6d"
+  },
+  {
+    "english": "dirty pink",
+    "code": "#ca7b80"
+  },
+  {
+    "english": "dark blue green",
+    "code": "#005249"
+  },
+  {
+    "english": "pine",
+    "code": "#2b5d34"
+  },
+  {
+    "english": "yellowy green",
+    "code": "#bff128"
+  },
+  {
+    "english": "dark gold",
+    "code": "#b59410"
+  },
+  {
+    "english": "bluish",
+    "code": "#2976bb"
+  },
+  {
+    "english": "darkish blue",
+    "code": "#014182"
+  },
+  {
+    "english": "dull red",
+    "code": "#bb3f3f"
+  },
+  {
+    "english": "pinky red",
+    "code": "#fc2647"
+  },
+  {
+    "english": "bronze",
+    "code": "#a87900"
+  },
+  {
+    "english": "pale teal",
+    "code": "#82cbb2"
+  },
+  {
+    "english": "military green",
+    "code": "#667c3e"
+  },
+  {
+    "english": "barbie pink",
+    "code": "#fe46a5"
+  },
+  {
+    "english": "bubblegum pink",
+    "code": "#fe83cc"
+  },
+  {
+    "english": "pea soup green",
+    "code": "#94a617"
+  },
+  {
+    "english": "dark mustard",
+    "code": "#a88905"
+  },
+  {
+    "english": "shit",
+    "code": "#7f5f00"
+  },
+  {
+    "english": "medium purple",
+    "code": "#9e43a2"
+  },
+  {
+    "english": "very dark green",
+    "code": "#062e03"
+  },
+  {
+    "english": "dirt",
+    "code": "#8a6e45"
+  },
+  {
+    "english": "dusky pink",
+    "code": "#cc7a8b"
+  },
+  {
+    "english": "red violet",
+    "code": "#9e0168"
+  },
+  {
+    "english": "lemon yellow",
+    "code": "#fdff38"
+  },
+  {
+    "english": "pistachio",
+    "code": "#c0fa8b"
+  },
+  {
+    "english": "dull yellow",
+    "code": "#eedc5b"
+  },
+  {
+    "english": "dark lime green",
+    "code": "#7ebd01"
+  },
+  {
+    "english": "denim blue",
+    "code": "#3b5b92"
+  },
+  {
+    "english": "teal blue",
+    "code": "#01889f"
+  },
+  {
+    "english": "lightish blue",
+    "code": "#3d7afd"
+  },
+  {
+    "english": "purpley blue",
+    "code": "#5f34e7"
+  },
+  {
+    "english": "light indigo",
+    "code": "#6d5acf"
+  },
+  {
+    "english": "swamp green",
+    "code": "#748500"
+  },
+  {
+    "english": "brown green",
+    "code": "#706c11"
+  },
+  {
+    "english": "dark maroon",
+    "code": "#3c0008"
+  },
+  {
+    "english": "hot purple",
+    "code": "#cb00f5"
+  },
+  {
+    "english": "dark forest green",
+    "code": "#002d04"
+  },
+  {
+    "english": "faded blue",
+    "code": "#658cbb"
+  },
+  {
+    "english": "drab green",
+    "code": "#749551"
+  },
+  {
+    "english": "light lime green",
+    "code": "#b9ff66"
+  },
+  {
+    "english": "snot green",
+    "code": "#9dc100"
+  },
+  {
+    "english": "yellowish",
+    "code": "#faee66"
+  },
+  {
+    "english": "light blue green",
+    "code": "#7efbb3"
+  },
+  {
+    "english": "bordeaux",
+    "code": "#7b002c"
+  },
+  {
+    "english": "light mauve",
+    "code": "#c292a1"
+  },
+  {
+    "english": "ocean",
+    "code": "#017b92"
+  },
+  {
+    "english": "marigold",
+    "code": "#fcc006"
+  },
+  {
+    "english": "muddy green",
+    "code": "#657432"
+  },
+  {
+    "english": "dull orange",
+    "code": "#d8863b"
+  },
+  {
+    "english": "steel",
+    "code": "#738595"
+  },
+  {
+    "english": "electric purple",
+    "code": "#aa23ff"
+  },
+  {
+    "english": "fluorescent green",
+    "code": "#08ff08"
+  },
+  {
+    "english": "yellowish brown",
+    "code": "#9b7a01"
+  },
+  {
+    "english": "blush",
+    "code": "#f29e8e"
+  },
+  {
+    "english": "soft green",
+    "code": "#6fc276"
+  },
+  {
+    "english": "bright orange",
+    "code": "#ff5b00"
+  },
+  {
+    "english": "lemon",
+    "code": "#fdff52"
+  },
+  {
+    "english": "purple grey",
+    "code": "#866f85"
+  },
+  {
+    "english": "acid green",
+    "code": "#8ffe09"
+  },
+  {
+    "english": "pale lavender",
+    "code": "#eecffe"
+  },
+  {
+    "english": "violet blue",
+    "code": "#510ac9"
+  },
+  {
+    "english": "light forest green",
+    "code": "#4f9153"
+  },
+  {
+    "english": "burnt red",
+    "code": "#9f2305"
+  },
+  {
+    "english": "khaki green",
+    "code": "#728639"
+  },
+  {
+    "english": "cerise",
+    "code": "#de0c62"
+  },
+  {
+    "english": "faded purple",
+    "code": "#916e99"
+  },
+  {
+    "english": "apricot",
+    "code": "#ffb16d"
+  },
+  {
+    "english": "dark olive green",
+    "code": "#3c4d03"
+  },
+  {
+    "english": "grey brown",
+    "code": "#7f7053"
+  },
+  {
+    "english": "green grey",
+    "code": "#77926f"
+  },
+  {
+    "english": "true blue",
+    "code": "#010fcc"
+  },
+  {
+    "english": "pale violet",
+    "code": "#ceaefa"
+  },
+  {
+    "english": "periwinkle blue",
+    "code": "#8f99fb"
+  },
+  {
+    "english": "light sky blue",
+    "code": "#c6fcff"
+  },
+  {
+    "english": "blurple",
+    "code": "#5539cc"
+  },
+  {
+    "english": "green brown",
+    "code": "#544e03"
+  },
+  {
+    "english": "bluegreen",
+    "code": "#017a79"
+  },
+  {
+    "english": "bright teal",
+    "code": "#01f9c6"
+  },
+  {
+    "english": "brownish yellow",
+    "code": "#c9b003"
+  },
+  {
+    "english": "pea soup",
+    "code": "#929901"
+  },
+  {
+    "english": "forest",
+    "code": "#0b5509"
+  },
+  {
+    "english": "barney purple",
+    "code": "#a00498"
+  },
+  {
+    "english": "ultramarine",
+    "code": "#2000b1"
+  },
+  {
+    "english": "purplish",
+    "code": "#94568c"
+  },
+  {
+    "english": "bluish grey",
+    "code": "#748b97"
+  },
+  {
+    "english": "dark periwinkle",
+    "code": "#665fd1"
+  },
+  {
+    "english": "dark lilac",
+    "code": "#9c6da5"
+  },
+  {
+    "english": "reddish",
+    "code": "#c44240"
+  },
+  {
+    "english": "light maroon",
+    "code": "#a24857"
+  },
+  {
+    "english": "dusty purple",
+    "code": "#825f87"
+  },
+  {
+    "english": "terra cotta",
+    "code": "#c9643b"
+  },
+  {
+    "english": "avocado",
+    "code": "#90b134"
+  },
+  {
+    "english": "marine blue",
+    "code": "#01386a"
+  },
+  {
+    "english": "teal green",
+    "code": "#25a36f"
+  },
+  {
+    "english": "slate grey",
+    "code": "#59656d"
+  },
+  {
+    "english": "lighter green",
+    "code": "#75fd63"
+  },
+  {
+    "english": "electric green",
+    "code": "#21fc0d"
+  },
+  {
+    "english": "dusty blue",
+    "code": "#5a86ad"
+  },
+  {
+    "english": "golden yellow",
+    "code": "#fec615"
+  },
+  {
+    "english": "bright yellow",
+    "code": "#fffd01"
+  },
+  {
+    "english": "light lavender",
+    "code": "#dfc5fe"
+  },
+  {
+    "english": "umber",
+    "code": "#b26400"
+  },
+  {
+    "english": "poop",
+    "code": "#7f5e00"
+  },
+  {
+    "english": "dark peach",
+    "code": "#de7e5d"
+  },
+  {
+    "english": "jungle green",
+    "code": "#048243"
+  },
+  {
+    "english": "eggshell",
+    "code": "#ffffd4"
+  },
+  {
+    "english": "denim",
+    "code": "#3b638c"
+  },
+  {
+    "english": "yellow brown",
+    "code": "#b79400"
+  },
+  {
+    "english": "dull purple",
+    "code": "#84597e"
+  },
+  {
+    "english": "chocolate brown",
+    "code": "#411900"
+  },
+  {
+    "english": "wine red",
+    "code": "#7b0323"
+  },
+  {
+    "english": "neon blue",
+    "code": "#04d9ff"
+  },
+  {
+    "english": "dirty green",
+    "code": "#667e2c"
+  },
+  {
+    "english": "light tan",
+    "code": "#fbeeac"
+  },
+  {
+    "english": "ice blue",
+    "code": "#d7fffe"
+  },
+  {
+    "english": "cadet blue",
+    "code": "#4e7496"
+  },
+  {
+    "english": "dark mauve",
+    "code": "#874c62"
+  },
+  {
+    "english": "very light blue",
+    "code": "#d5ffff"
+  },
+  {
+    "english": "grey purple",
+    "code": "#826d8c"
+  },
+  {
+    "english": "pastel pink",
+    "code": "#ffbacd"
+  },
+  {
+    "english": "very light green",
+    "code": "#d1ffbd"
+  },
+  {
+    "english": "dark sky blue",
+    "code": "#448ee4"
+  },
+  {
+    "english": "evergreen",
+    "code": "#05472a"
+  },
+  {
+    "english": "dull pink",
+    "code": "#d5869d"
+  },
+  {
+    "english": "aubergine",
+    "code": "#3d0734"
+  },
+  {
+    "english": "mahogany",
+    "code": "#4a0100"
+  },
+  {
+    "english": "reddish orange",
+    "code": "#f8481c"
+  },
+  {
+    "english": "deep green",
+    "code": "#02590f"
+  },
+  {
+    "english": "purple pink",
+    "code": "#e03fd8"
+  },
+  {
+    "english": "dusty pink",
+    "code": "#d58a94"
+  },
+  {
+    "english": "faded green",
+    "code": "#7bb274"
+  },
+  {
+    "english": "camo green",
+    "code": "#526525"
+  },
+  {
+    "english": "pinky purple",
+    "code": "#c94cbe"
+  },
+  {
+    "english": "pink purple",
+    "code": "#db4bda"
+  },
+  {
+    "english": "brownish red",
+    "code": "#9e3623"
+  },
+  {
+    "english": "dark rose",
+    "code": "#b5485d"
+  },
+  {
+    "english": "mud",
+    "code": "#735c12"
+  },
+  {
+    "english": "brownish",
+    "code": "#9c6d57"
+  },
+  {
+    "english": "emerald green",
+    "code": "#028f1e"
+  },
+  {
+    "english": "pale brown",
+    "code": "#b1916e"
+  },
+  {
+    "english": "dull blue",
+    "code": "#49759c"
+  },
+  {
+    "english": "burnt umber",
+    "code": "#a0450e"
+  },
+  {
+    "english": "medium green",
+    "code": "#39ad48"
+  },
+  {
+    "english": "clay",
+    "code": "#b66a50"
+  },
+  {
+    "english": "light aqua",
+    "code": "#8cffdb"
+  },
+  {
+    "english": "light olive green",
+    "code": "#a4be5c"
+  },
+  {
+    "english": "brownish orange",
+    "code": "#cb7723"
+  },
+  {
+    "english": "dark aqua",
+    "code": "#05696b"
+  },
+  {
+    "english": "purplish pink",
+    "code": "#ce5dae"
+  },
+  {
+    "english": "dark salmon",
+    "code": "#c85a53"
+  },
+  {
+    "english": "greenish grey",
+    "code": "#96ae8d"
+  },
+  {
+    "english": "jade",
+    "code": "#1fa774"
+  },
+  {
+    "english": "ugly green",
+    "code": "#7a9703"
+  },
+  {
+    "english": "dark beige",
+    "code": "#ac9362"
+  },
+  {
+    "english": "emerald",
+    "code": "#01a049"
+  },
+  {
+    "english": "pale red",
+    "code": "#d9544d"
+  },
+  {
+    "english": "light magenta",
+    "code": "#fa5ff7"
+  },
+  {
+    "english": "sky",
+    "code": "#82cafc"
+  },
+  {
+    "english": "light cyan",
+    "code": "#acfffc"
+  },
+  {
+    "english": "yellow orange",
+    "code": "#fcb001"
+  },
+  {
+    "english": "reddish purple",
+    "code": "#910951"
+  },
+  {
+    "english": "reddish pink",
+    "code": "#fe2c54"
+  },
+  {
+    "english": "orchid",
+    "code": "#c875c4"
+  },
+  {
+    "english": "dirty yellow",
+    "code": "#cdc50a"
+  },
+  {
+    "english": "orange red",
+    "code": "#fd411e"
+  },
+  {
+    "english": "deep red",
+    "code": "#9a0200"
+  },
+  {
+    "english": "orange brown",
+    "code": "#be6400"
+  },
+  {
+    "english": "cobalt blue",
+    "code": "#030aa7"
+  },
+  {
+    "english": "neon pink",
+    "code": "#fe019a"
+  },
+  {
+    "english": "rose pink",
+    "code": "#f7879a"
+  },
+  {
+    "english": "greyish purple",
+    "code": "#887191"
+  },
+  {
+    "english": "raspberry",
+    "code": "#b00149"
+  },
+  {
+    "english": "aqua green",
+    "code": "#12e193"
+  },
+  {
+    "english": "salmon pink",
+    "code": "#fe7b7c"
+  },
+  {
+    "english": "tangerine",
+    "code": "#ff9408"
+  },
+  {
+    "english": "brownish green",
+    "code": "#6a6e09"
+  },
+  {
+    "english": "red brown",
+    "code": "#8b2e16"
+  },
+  {
+    "english": "greenish brown",
+    "code": "#696112"
+  },
+  {
+    "english": "pumpkin",
+    "code": "#e17701"
+  },
+  {
+    "english": "pine green",
+    "code": "#0a481e"
+  },
+  {
+    "english": "charcoal",
+    "code": "#343837"
+  },
+  {
+    "english": "baby pink",
+    "code": "#ffb7ce"
+  },
+  {
+    "english": "cornflower",
+    "code": "#6a79f7"
+  },
+  {
+    "english": "blue violet",
+    "code": "#5d06e9"
+  },
+  {
+    "english": "chocolate",
+    "code": "#3d1c02"
+  },
+  {
+    "english": "greyish green",
+    "code": "#82a67d"
+  },
+  {
+    "english": "scarlet",
+    "code": "#be0119"
+  },
+  {
+    "english": "green yellow",
+    "code": "#c9ff27"
+  },
+  {
+    "english": "dark olive",
+    "code": "#373e02"
+  },
+  {
+    "english": "sienna",
+    "code": "#a9561e"
+  },
+  {
+    "english": "pastel purple",
+    "code": "#caa0ff"
+  },
+  {
+    "english": "terracotta",
+    "code": "#ca6641"
+  },
+  {
+    "english": "aqua blue",
+    "code": "#02d8e9"
+  },
+  {
+    "english": "sage green",
+    "code": "#88b378"
+  },
+  {
+    "english": "blood red",
+    "code": "#980002"
+  },
+  {
+    "english": "deep pink",
+    "code": "#cb0162"
+  },
+  {
+    "english": "grass",
+    "code": "#5cac2d"
+  },
+  {
+    "english": "moss",
+    "code": "#769958"
+  },
+  {
+    "english": "pastel blue",
+    "code": "#a2bffe"
+  },
+  {
+    "english": "bluish green",
+    "code": "#10a674"
+  },
+  {
+    "english": "green blue",
+    "code": "#06b48b"
+  },
+  {
+    "english": "dark tan",
+    "code": "#af884a"
+  },
+  {
+    "english": "greenish blue",
+    "code": "#0b8b87"
+  },
+  {
+    "english": "pale orange",
+    "code": "#ffa756"
+  },
+  {
+    "english": "vomit",
+    "code": "#a2a415"
+  },
+  {
+    "english": "forrest green",
+    "code": "#154406"
+  },
+  {
+    "english": "dark lavender",
+    "code": "#856798"
+  },
+  {
+    "english": "dark violet",
+    "code": "#34013f"
+  },
+  {
+    "english": "purple blue",
+    "code": "#632de9"
+  },
+  {
+    "english": "dark cyan",
+    "code": "#0a888a"
+  },
+  {
+    "english": "olive drab",
+    "code": "#6f7632"
+  },
+  {
+    "english": "pinkish",
+    "code": "#d46a7e"
+  },
+  {
+    "english": "cobalt",
+    "code": "#1e488f"
+  },
+  {
+    "english": "neon purple",
+    "code": "#bc13fe"
+  },
+  {
+    "english": "light turquoise",
+    "code": "#7ef4cc"
+  },
+  {
+    "english": "apple green",
+    "code": "#76cd26"
+  },
+  {
+    "english": "dull green",
+    "code": "#74a662"
+  },
+  {
+    "english": "wine",
+    "code": "#80013f"
+  },
+  {
+    "english": "powder blue",
+    "code": "#b1d1fc"
+  },
+  {
+    "english": "off white",
+    "code": "#ffffe4"
+  },
+  {
+    "english": "electric blue",
+    "code": "#0652ff"
+  },
+  {
+    "english": "dark turquoise",
+    "code": "#045c5a"
+  },
+  {
+    "english": "blue purple",
+    "code": "#5729ce"
+  },
+  {
+    "english": "azure",
+    "code": "#069af3"
+  },
+  {
+    "english": "bright red",
+    "code": "#ff000d"
+  },
+  {
+    "english": "pinkish red",
+    "code": "#f10c45"
+  },
+  {
+    "english": "cornflower blue",
+    "code": "#5170d7"
+  },
+  {
+    "english": "light olive",
+    "code": "#acbf69"
+  },
+  {
+    "english": "grape",
+    "code": "#6c3461"
+  },
+  {
+    "english": "greyish blue",
+    "code": "#5e819d"
+  },
+  {
+    "english": "purplish blue",
+    "code": "#601ef9"
+  },
+  {
+    "english": "yellowish green",
+    "code": "#b0dd16"
+  },
+  {
+    "english": "greenish yellow",
+    "code": "#cdfd02"
+  },
+  {
+    "english": "medium blue",
+    "code": "#2c6fbb"
+  },
+  {
+    "english": "dusty rose",
+    "code": "#c0737a"
+  },
+  {
+    "english": "light violet",
+    "code": "#d6b4fc"
+  },
+  {
+    "english": "midnight blue",
+    "code": "#020035"
+  },
+  {
+    "english": "bluish purple",
+    "code": "#703be7"
+  },
+  {
+    "english": "red orange",
+    "code": "#fd3c06"
+  },
+  {
+    "english": "dark magenta",
+    "code": "#960056"
+  },
+  {
+    "english": "greenish",
+    "code": "#40a368"
+  },
+  {
+    "english": "ocean blue",
+    "code": "#03719c"
+  },
+  {
+    "english": "coral",
+    "code": "#fc5a50"
+  },
+  {
+    "english": "cream",
+    "code": "#ffffc2"
+  },
+  {
+    "english": "reddish brown",
+    "code": "#7f2b0a"
+  },
+  {
+    "english": "burnt sienna",
+    "code": "#b04e0f"
+  },
+  {
+    "english": "brick",
+    "code": "#a03623"
+  },
+  {
+    "english": "sage",
+    "code": "#87ae73"
+  },
+  {
+    "english": "grey green",
+    "code": "#789b73"
+  },
+  {
+    "english": "white",
+    "code": "#ffffff"
+  },
+  {
+    "english": "robin's egg blue",
+    "code": "#98eff9"
+  },
+  {
+    "english": "moss green",
+    "code": "#658b38"
+  },
+  {
+    "english": "steel blue",
+    "code": "#5a7d9a"
+  },
+  {
+    "english": "eggplant",
+    "code": "#380835"
+  },
+  {
+    "english": "light yellow",
+    "code": "#fffe7a"
+  },
+  {
+    "english": "leaf green",
+    "code": "#5ca904"
+  },
+  {
+    "english": "light grey",
+    "code": "#d8dcd6"
+  },
+  {
+    "english": "pinkish purple",
+    "code": "#d648d7"
+  },
+  {
+    "english": "sea blue",
+    "code": "#047495"
+  },
+  {
+    "english": "pale purple",
+    "code": "#b790d4"
+  },
+  {
+    "english": "slate blue",
+    "code": "#5b7c99"
+  },
+  {
+    "english": "blue grey",
+    "code": "#607c8e"
+  },
+  {
+    "english": "hunter green",
+    "code": "#0b4008"
+  },
+  {
+    "english": "fuchsia",
+    "code": "#ed0dd9"
+  },
+  {
+    "english": "crimson",
+    "code": "#8c000f"
+  },
+  {
+    "english": "pale yellow",
+    "code": "#ffff84"
+  },
+  {
+    "english": "ochre",
+    "code": "#bf9005"
+  },
+  {
+    "english": "mustard yellow",
+    "code": "#d2bd0a"
+  },
+  {
+    "english": "light red",
+    "code": "#ff474c"
+  },
+  {
+    "english": "cerulean",
+    "code": "#0485d1"
+  },
+  {
+    "english": "pale pink",
+    "code": "#ffcfdc"
+  },
+  {
+    "english": "deep blue",
+    "code": "#040273"
+  },
+  {
+    "english": "rust",
+    "code": "#a83c09"
+  },
+  {
+    "english": "light teal",
+    "code": "#90e4c1"
+  },
+  {
+    "english": "slate",
+    "code": "#516572"
+  },
+  {
+    "english": "goldenrod",
+    "code": "#fac205"
+  },
+  {
+    "english": "dark yellow",
+    "code": "#d5b60a"
+  },
+  {
+    "english": "dark grey",
+    "code": "#363737"
+  },
+  {
+    "english": "army green",
+    "code": "#4b5d16"
+  },
+  {
+    "english": "grey blue",
+    "code": "#6b8ba4"
+  },
+  {
+    "english": "seafoam",
+    "code": "#80f9ad"
+  },
+  {
+    "english": "puce",
+    "code": "#a57e52"
+  },
+  {
+    "english": "spring green",
+    "code": "#a9f971"
+  },
+  {
+    "english": "dark orange",
+    "code": "#c65102"
+  },
+  {
+    "english": "sand",
+    "code": "#e2ca76"
+  },
+  {
+    "english": "pastel green",
+    "code": "#b0ff9d"
+  },
+  {
+    "english": "mint",
+    "code": "#9ffeb0"
+  },
+  {
+    "english": "light orange",
+    "code": "#fdaa48"
+  },
+  {
+    "english": "bright pink",
+    "code": "#fe01b1"
+  },
+  {
+    "english": "chartreuse",
+    "code": "#c1f80a"
+  },
+  {
+    "english": "deep purple",
+    "code": "#36013f"
+  },
+  {
+    "english": "dark brown",
+    "code": "#341c02"
+  },
+  {
+    "english": "taupe",
+    "code": "#b9a281"
+  },
+  {
+    "english": "pea green",
+    "code": "#8eab12"
+  },
+  {
+    "english": "kelly green",
+    "code": "#02ab2e"
+  },
+  {
+    "english": "seafoam green",
+    "code": "#7af9ab"
+  },
+  {
+    "english": "blue green",
+    "code": "#137e6d"
+  },
+  {
+    "english": "khaki",
+    "code": "#aaa662"
+  },
+  {
+    "english": "burgundy",
+    "code": "#610023"
+  },
+  {
+    "english": "dark teal",
+    "code": "#014d4e"
+  },
+  {
+    "english": "brick red",
+    "code": "#8f1402"
+  },
+  {
+    "english": "royal purple",
+    "code": "#4b006e"
+  },
+  {
+    "english": "plum",
+    "code": "#580f41"
+  },
+  {
+    "english": "mint green",
+    "code": "#8fff9f"
+  },
+  {
+    "english": "gold",
+    "code": "#dbb40c"
+  },
+  {
+    "english": "baby blue",
+    "code": "#a2cffe"
+  },
+  {
+    "english": "yellow green",
+    "code": "#c0fb2d"
+  },
+  {
+    "english": "bright purple",
+    "code": "#be03fd"
+  },
+  {
+    "english": "dark red",
+    "code": "#840000"
+  },
+  {
+    "english": "pale blue",
+    "code": "#d0fefe"
+  },
+  {
+    "english": "grass green",
+    "code": "#3f9b0b"
+  },
+  {
+    "english": "navy",
+    "code": "#01153e"
+  },
+  {
+    "english": "aquamarine",
+    "code": "#04d8b2"
+  },
+  {
+    "english": "burnt orange",
+    "code": "#c04e01"
+  },
+  {
+    "english": "neon green",
+    "code": "#0cff0c"
+  },
+  {
+    "english": "bright blue",
+    "code": "#0165fc"
+  },
+  {
+    "english": "rose",
+    "code": "#cf6275"
+  },
+  {
+    "english": "light pink",
+    "code": "#ffd1df"
+  },
+  {
+    "english": "mustard",
+    "code": "#ceb301"
+  },
+  {
+    "english": "indigo",
+    "code": "#380282"
+  },
+  {
+    "english": "lime",
+    "code": "#aaff32"
+  },
+  {
+    "english": "sea green",
+    "code": "#53fca1"
+  },
+  {
+    "english": "periwinkle",
+    "code": "#8e82fe"
+  },
+  {
+    "english": "dark pink",
+    "code": "#cb416b"
+  },
+  {
+    "english": "olive green",
+    "code": "#677a04"
+  },
+  {
+    "english": "peach",
+    "code": "#ffb07c"
+  },
+  {
+    "english": "pale green",
+    "code": "#c7fdb5"
+  },
+  {
+    "english": "light brown",
+    "code": "#ad8150"
+  },
+  {
+    "english": "hot pink",
+    "code": "#ff028d"
+  },
+  {
+    "english": "black",
+    "code": "#000000"
+  },
+  {
+    "english": "lilac",
+    "code": "#cea2fd"
+  },
+  {
+    "english": "navy blue",
+    "code": "#001146"
+  },
+  {
+    "english": "royal blue",
+    "code": "#0504aa"
+  },
+  {
+    "english": "beige",
+    "code": "#e6daa6"
+  },
+  {
+    "english": "salmon",
+    "code": "#ff796c"
+  },
+  {
+    "english": "olive",
+    "code": "#6e750e"
+  },
+  {
+    "english": "maroon",
+    "code": "#650021"
+  },
+  {
+    "english": "bright green",
+    "code": "#01ff07"
+  },
+  {
+    "english": "dark purple",
+    "code": "#35063e"
+  },
+  {
+    "english": "mauve",
+    "code": "#ae7181"
+  },
+  {
+    "english": "forest green",
+    "code": "#06470c"
+  },
+  {
+    "english": "aqua",
+    "code": "#13eac9"
+  },
+  {
+    "english": "cyan",
+    "code": "#00ffff"
+  },
+  {
+    "english": "tan",
+    "code": "#d1b26f"
+  },
+  {
+    "english": "dark blue",
+    "code": "#00035b"
+  },
+  {
+    "english": "lavender",
+    "code": "#c79fef"
+  },
+  {
+    "english": "turquoise",
+    "code": "#06c2ac"
+  },
+  {
+    "english": "dark green",
+    "code": "#033500"
+  },
+  {
+    "english": "violet",
+    "code": "#9a0eea"
+  },
+  {
+    "english": "light purple",
+    "code": "#bf77f6"
+  },
+  {
+    "english": "lime green",
+    "code": "#89fe05"
+  },
+  {
+    "english": "grey",
+    "code": "#929591"
+  },
+  {
+    "english": "sky blue",
+    "code": "#75bbfd"
+  },
+  {
+    "english": "yellow",
+    "code": "#ffff14"
+  },
+  {
+    "english": "magenta",
+    "code": "#c20078"
+  },
+  {
+    "english": "light green",
+    "code": "#96f97b"
+  },
+  {
+    "english": "orange",
+    "code": "#f97306"
+  },
+  {
+    "english": "teal",
+    "code": "#029386"
+  },
+  {
+    "english": "light blue",
+    "code": "#95d0fc"
+  },
+  {
+    "english": "red",
+    "code": "#e50000"
+  },
+  {
+    "english": "brown",
+    "code": "#653700"
+  },
+  {
+    "english": "pink",
+    "code": "#ff81c0"
+  },
+  {
+    "english": "blue",
+    "code": "#0343df"
+  },
+  {
+    "english": "green",
+    "code": "#15b01a"
+  },
+  {
+    "english": "purple",
+    "code": "#7e1e9c"
+  }
+]
