@@ -67,11 +67,11 @@ router.get('/history', authRequired, async (req, res, next) => {
 });
 
 /**
- * 1) 임시 업로드 (multipart/form-data, key="file")
+ * 1) 임시 업로드 (multipart/form-data, key="image")
  * ✔ 인증 없이도 가능하게 유지 (원하면 authRequired 붙이면 됨)
  * 응답: { tempKey, mime, size, originalName }
  */
-router.post('/upload', upload.single('file'), async (req, res, next) => {
+router.post('/upload', upload.single('image'), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
