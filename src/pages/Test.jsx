@@ -83,9 +83,6 @@ function labToRgb(lab) {
 /**
  * 축 방향으로 delta만큼 이동한 색 만들기.
  * axis: 'a' | 'b' | 'both'
- *  - 'a': a*만 바꿈  (빨강-초록 축 민감도)
- *  - 'b': b*만 바꿈  (파랑-노랑 축 민감도)
- *  - 'both': a*, b*를 동시에 조금씩 바꿔서 전반 채도/대비 민감도 테스트
  */
 function makeVariantColors(baseLab, axis, delta) {
   const sameRGB = labToRgb(baseLab);
@@ -168,7 +165,6 @@ const QUESTIONS_TEMPLATE = [
 ];
 
 const SECONDS_PER_QUESTION = 22;
-
 
 /* ===================== 메인 컴포넌트 ===================== */
 export default function ColorVisionScreening() {
@@ -286,19 +282,13 @@ export default function ColorVisionScreening() {
     window.location.reload();
   };
 
-  // JSON 다운로드
-  const downloadJSON = (payload) => {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href=url;
-    a.download='color_vision_screening_result.json';
-    a.click();
-    URL.revokeObjectURL(url);
+  // 업로드 페이지 이동
+  const goUpload = () => {
+    // 라우터를 안 쓴 환경에서도 동작하도록 단순 이동 처리
+    window.location.href = '/upload';
   };
 
   /* ===================== 결과 분석 =====================
-     여기서 "최종 한 줄 메시지"만 뽑는다.
      - axis='a' (빨강-초록) hard 난이도 정확도
      - axis='b' (파랑-노랑) hard 난이도 정확도
      기준으로 경고 메시지 선택
@@ -306,9 +296,7 @@ export default function ColorVisionScreening() {
   const report = useMemo(() => {
     if (!done) return null;
 
-    // helper: 특정 축(ax) + hard 난이도에서의 정답률
     function getHardAcc(axisName) {
-      // answers 중 axis===axisName && difficulty==='hard'
       const subset = answers.filter(
         a => a.axis === axisName && a.difficulty === 'hard'
       );
@@ -320,12 +308,8 @@ export default function ColorVisionScreening() {
     const accA = getHardAcc('a');     // 적/녹
     const accB = getHardAcc('b');     // 청/황
 
-    // 임계값 (대충 예시):
-    // hard에서 정답률 < 0.4 → "심한 저하 의심"
-    // hard에서 정답률 < 0.7 → "경미한 저하 의심"
-    // 그 이상 → 정상 범위로 취급
     function classifyAxis(acc) {
-      if (acc === null) return 'unknown'; // 데이터 없으면
+      if (acc === null) return 'unknown';
       if (acc < 0.4) return 'severe';
       if (acc < 0.7) return 'mild';
       return 'ok';
@@ -333,12 +317,6 @@ export default function ColorVisionScreening() {
 
     const classA = classifyAxis(accA);
     const classB = classifyAxis(accB);
-
-    // 우선순위:
-    // 1) 둘 다 severe or (하나는 severe, 다른 하나 mild 이상) → 광범위 이상
-    // 2) A축이 mild 이상 문제 → 적색약/녹색약 의심
-    // 3) B축이 mild 이상 문제 → 청색약 의심
-    // 4) 나머지 → 정상 범위로 보입니다.
 
     let headline = '정상입니다(색각 이상이 없습니다).';
     let subNote =
@@ -394,41 +372,13 @@ export default function ColorVisionScreening() {
           </div>
         </div>
 
-        {/* 디버그/개발용 상세(원하면 숨겨도 됨) */}
-        <details style={{ marginTop:16 }}>
-          <summary>상세 보기 (개별 응답 로그)</summary>
-          <ul style={{ marginTop:8 }}>
-            {report.answers.map((a,i)=>(
-              <li
-                key={i}
-                style={{
-                  fontFamily:'monospace',
-                  fontSize:12,
-                  lineHeight:1.5
-                }}
-              >
-                #{i+1}
-                {' '}axis={a.axis}
-                {' '}diff={a.difficulty}
-                {' '}pal={a.palette}
-                {' '}pick={a.pickIndex ?? '(미응답)'}
-                {' '}correct={String(a.correct)}
-                {' '}ms={a.ms}
-                {' '}trueIdx={a.diffIndex}
-              </li>
-            ))}
-          </ul>
-        </details>
-
+        {/* 버튼 영역 */}
         <div style={{ display:'flex', gap:8, marginTop:16 }}>
           <button onClick={restart} style={btn('#2d7ef7')}>
             다시 시작
           </button>
-          <button
-            onClick={()=>downloadJSON(report)}
-            style={btn('#10b981')}
-          >
-            결과 JSON 다운로드
+          <button onClick={goUpload} style={btn('#10b981')}>
+            사진 업로드
           </button>
         </div>
 
@@ -451,7 +401,6 @@ export default function ColorVisionScreening() {
 
       <p style={{ marginTop:6, color:'#ccc', fontSize:14, lineHeight:1.4 }}>
         3x3 격자 중 다른 색으로 보이는 칸을 직접 클릭하세요.
-        (좌상단=0, 우하단=8)
       </p>
 
       <canvas
@@ -469,13 +418,6 @@ export default function ColorVisionScreening() {
           cursor:'pointer'
         }}
       />
-
-      <div style={{ marginTop:12, color:'#aaa', fontSize:13, lineHeight:1.4 }}>
-        <div>인덱스 배열 예시</div>
-        <div style={{ fontFamily:'monospace', fontSize:12 }}>
-          0 1 2<br/>3 4 5<br/>6 7 8
-        </div>
-      </div>
 
       <div style={{ marginTop:16 }}>
         <button
