@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import xkcdColors from '../assets/xkcd_color.json';
 
+/* ---------- localStorage 키 ---------- */
+const STORAGE_KEY = 'colorPalettes_v1';
+
 /* ---------- 색상 유틸 ---------- */
 const rgb2xyz = (r, g, b) => {
   const srgb = [r, g, b].map(v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) });
@@ -48,6 +51,7 @@ const extractPalette = async (imgUrl, clusters = 5, sampleSize = 200 * 200, iter
   const img = await new Promise((res, rej) => {
     const i = new Image(); i.crossOrigin = 'anonymous';
     i.onload = () => res(i); i.onerror = rej; i.src = imgUrl;
+    // 브라우저 캐시가 잘 안될 경우를 대비한 쿼리 파라미터 추가도 가능
   });
   const ratio = img.width > 320 ? 320 / img.width : 1;
   const w = Math.max(1, Math.round(img.width * ratio));
@@ -140,6 +144,7 @@ export default function Result() {
     </div>
   );
 
+  // 팔레트 추출
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -149,6 +154,7 @@ export default function Result() {
     return () => { mounted = false };
   }, [imageUrl]);
 
+  // 캔버스 그리기
   useEffect(() => {
     if (!canvasRef.current || !palette.length) return;
     (async () => {
@@ -169,10 +175,10 @@ export default function Result() {
       const paletteLab = palette.map(p => rgb2lab(...p.rgb));
       const clusterMap = new Uint8Array(w * h);
 
-      // 1️⃣ clusterMap 계산 (클러스터링 영역 고정)
+      // 1️⃣ clusterMap 계산
       for (let i = 0; i < d.length; i += 4) {
-        const r = d[i], g = d[i + 1], b = d[i + 2]; // 원본 RGB
-        const lab = rgb2lab(r, g, b);
+        const r0 = d[i], g0 = d[i + 1], b0 = d[i + 2]; // 원본 RGB
+        const lab = rgb2lab(r0, g0, b0);
         let minDist = Infinity, minIdx = -1;
         paletteLab.forEach((pl, idx) => {
           const dist = labDist(...lab, ...pl);
@@ -207,7 +213,6 @@ export default function Result() {
             const idx = y * w + x;
             const c = clusterMap[idx];
 
-            // 주변 8방향 체크
             const neighbors = [
               clusterMap[idx - 1], clusterMap[idx + 1],
               clusterMap[idx - w], clusterMap[idx + w],
@@ -215,10 +220,8 @@ export default function Result() {
               clusterMap[idx + w - 1], clusterMap[idx + w + 1]
             ];
 
-            // 다른 클러스터가 하나라도 있으면 경계
             const different = neighbors.some(n => n !== c);
 
-            // 주변과 거의 같은 클러스터면 노이즈 제외
             if (different) {
               const o = idx * 4;
               d[o] = borderColor[0];
@@ -229,14 +232,69 @@ export default function Result() {
         }
       }
 
-
       ctx.putImageData(imgData, 0, 0);
     })();
   }, [imageUrl, palette, selectedIdx, outlineMode, filterMode]);
 
+  /* ---------- 팔레트 저장 ---------- */
+  const handleSavePalette = () => {
+    if (!palette.length) {
+      alert('저장할 팔레트가 없습니다.');
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const prev = raw ? JSON.parse(raw) : [];
+
+      const entry = {
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        // 원래 이미지 경로나 메모를 넣고 싶으면 여기 추가 가능
+        colors: palette.map(p => ({
+          hex: p.hex,
+          name: p.name,
+          pct: p.pct,
+        })),
+      };
+
+      const next = [entry, ...prev];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      alert('팔레트를 저장했습니다.\n상단 메뉴의 Palettes 페이지에서 확인할 수 있어요.');
+    } catch (e) {
+      console.error(e);
+      alert('팔레트 저장 중 오류가 발생했습니다.');
+    }
+  };
+
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 20 }}>
-      <h2>색상 분석 결과</h2>
+      {/* 제목 + 저장 버튼 */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+        gap: 12,
+        flexWrap: 'wrap'
+      }}>
+        <h2 style={{ margin: 0 }}>색상 분석 결과</h2>
+        <button
+          onClick={handleSavePalette}
+          style={{
+            padding: '8px 14px',
+            borderRadius: 999,
+            border: 'none',
+            cursor: 'pointer',
+            background: '#10b981',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: 14
+          }}
+        >
+          현재 팔레트 저장
+        </button>
+      </div>
 
       {/* ✅ 토글 영역 */}
       <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
