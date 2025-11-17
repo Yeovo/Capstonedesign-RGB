@@ -5,9 +5,10 @@ const STORAGE_KEY = 'colorPalettes_v1';
 export default function SavedPalettes() {
   const [palettes, setPalettes] = useState([]);
   const [exportMenuOpen, setExportMenuOpen] = useState(null);
-  const [aiGeneratingIds, setAiGeneratingIds] = useState([]); // 어떤 팔레트에서 AI 태그 생성 중인지 표시용
+  const [aiGeneratingIds, setAiGeneratingIds] = useState([]); // AI 태그 생성 중인 팔레트 id
+  const [tagInputs, setTagInputs] = useState({});             // 사용자 태그 입력 상태
 
-  // 최초 로드: localStorage에서 팔레트 로딩
+  // 최초 로드: localStorage에서 팔레트 읽기
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -20,7 +21,7 @@ export default function SavedPalettes() {
     }
   }, []);
 
-  // 외부 클릭 -> 내보내기 메뉴 닫기
+  // 바깥 클릭하면 내보내기 메뉴 닫기
   useEffect(() => {
     const close = () => setExportMenuOpen(null);
     window.addEventListener('click', close);
@@ -30,7 +31,6 @@ export default function SavedPalettes() {
   // ✅ AI 태그 자동 생성: aiTags 없는 팔레트만 호출
   useEffect(() => {
     const generateForMissing = async () => {
-      // 이미 생성 중이거나 aiTags가 있는 팔레트는 건너뛰기
       const targets = palettes.filter(
         p => !p.aiTags && !aiGeneratingIds.includes(p.id)
       );
@@ -117,6 +117,29 @@ export default function SavedPalettes() {
 
     setPalettes(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  };
+
+  // 🔹 사용자 태그 입력값 변경
+  const handleTagInputChange = (id, value) => {
+    setTagInputs(prev => ({ ...prev, [id]: value }));
+  };
+
+  // 🔹 사용자 태그 저장 (쉼표로 구분)
+  const handleSaveUserTags = (id) => {
+    const raw = tagInputs[id] || '';
+    const tags = raw
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
+
+    const next = palettes.map(p =>
+      p.id === id ? { ...p, tags } : p
+    );
+
+    setPalettes(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    // 굳이 입력창 비우고 싶으면 아래 주석 해제
+    // setTagInputs(prev => ({ ...prev, [id]: '' }));
   };
 
   return (
@@ -340,17 +363,46 @@ export default function SavedPalettes() {
               ))}
             </div>
 
-            {/* (있다면) 사용자 태그 영역 - 너가 따로 저장하고 있다면 p.tags 같은 걸 여기 표시하면 됨 */}
-            {p.tags && p.tags.length > 0 && (
-              <div style={{ marginTop: 4, fontSize: 12 }}>
-                <div style={{ fontWeight: 600, marginBottom: 2 }}>사용자 태그</div>
-                <div>{Array.isArray(p.tags) ? p.tags.join(', ') : String(p.tags)}</div>
+            {/* 🔹 사용자 태그 영역 */}
+            <div style={{ marginTop: 4, fontSize: 12 }}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>사용자 태그</div>
+
+              {/* 이미 저장된 태그가 있으면 표시 */}
+              {p.tags && Array.isArray(p.tags) && p.tags.length > 0 && (
+                <div style={{ marginBottom: 4 }}>
+                  {p.tags.join(', ')}
+                </div>
+              )}
+
+              {/* 입력창 + 저장 버튼 */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="쉼표로 구분해 태그를 입력하세요"
+                  value={tagInputs[p.id] ?? ''}
+                  onChange={(e) => handleTagInputChange(p.id, e.target.value)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    padding: '4px 6px',
+                    fontSize: 12,
+                    borderRadius: 6,
+                    border: '1px solid #d1d5db',
+                    background: '#fff',
+                  }}
+                />
+                <button
+                  onClick={() => handleSaveUserTags(p.id)}
+                  style={btn('#6366f1')}
+                >
+                  저장
+                </button>
               </div>
-            )}
+            </div>
 
             {/* ✅ AI 태그 영역 */}
             {p.aiTags && Array.isArray(p.aiTags) && p.aiTags.length > 0 && (
-              <div style={{ marginTop: 8, fontSize: 12 }}>
+              <div style={{ marginTop: 10, fontSize: 12 }}>
                 <div style={{ fontWeight: 600, marginBottom: 2 }}>AI 태그</div>
                 <div>{p.aiTags.join(', ')}</div>
                 <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
@@ -359,7 +411,7 @@ export default function SavedPalettes() {
               </div>
             )}
 
-            {/* 생성 중일 때 간단 표기 */}
+            {/* 생성 중일 때 표시 */}
             {!p.aiTags && aiGeneratingIds.includes(p.id) && (
               <div style={{ marginTop: 6, fontSize: 11, color: '#9ca3af' }}>
                 AI 태그 생성 중...
