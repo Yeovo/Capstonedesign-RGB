@@ -124,22 +124,30 @@ export default function SavedPalettes() {
     setTagInputs(prev => ({ ...prev, [id]: value }));
   };
 
-  // 🔹 사용자 태그 저장 (쉼표로 구분)
+  // 🔹 사용자 태그 저장 (한 번에 하나씩, 누적)
   const handleSaveUserTags = (id) => {
-    const raw = tagInputs[id] || '';
-    const tags = raw
-      .split(',')
-      .map(t => t.trim())
-      .filter(Boolean);
+    const raw = (tagInputs[id] || '').trim();
+    if (!raw) return;
 
-    const next = palettes.map(p =>
-      p.id === id ? { ...p, tags } : p
-    );
+    // 앞에 # 붙여 입력해도 되게 처리
+    const cleaned = raw.startsWith('#') ? raw.slice(1).trim() : raw;
+    if (!cleaned) return;
+
+    const next = palettes.map(p => {
+      if (p.id !== id) return p;
+      const prevTags = Array.isArray(p.tags) ? p.tags : [];
+
+      // 같은 태그 중복 저장 막고 싶으면 아래 if 유지
+      if (prevTags.includes(cleaned)) return p;
+
+      return { ...p, tags: [...prevTags, cleaned] };
+    });
 
     setPalettes(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    // 굳이 입력창 비우고 싶으면 아래 주석 해제
-    // setTagInputs(prev => ({ ...prev, [id]: '' }));
+
+    // 저장 후 입력창 비우기
+    setTagInputs(prev => ({ ...prev, [id]: '' }));
   };
 
   return (
@@ -369,8 +377,25 @@ export default function SavedPalettes() {
 
               {/* 이미 저장된 태그가 있으면 표시 */}
               {p.tags && Array.isArray(p.tags) && p.tags.length > 0 && (
-                <div style={{ marginBottom: 4 }}>
-                  {p.tags.join(', ')}
+                <div style={{
+                  marginBottom: 4,
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 6,
+                }}>
+                  {p.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        padding: '2px 6px',
+                        borderRadius: 999,
+                        background: '#e5e7eb',
+                        fontSize: 11,
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
                 </div>
               )}
 
@@ -378,7 +403,7 @@ export default function SavedPalettes() {
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <input
                   type="text"
-                  placeholder="쉼표로 구분해 태그를 입력하세요"
+                  placeholder="태그를 입력하세요 (예: 석양)"
                   value={tagInputs[p.id] ?? ''}
                   onChange={(e) => handleTagInputChange(p.id, e.target.value)}
                   style={{
