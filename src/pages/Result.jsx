@@ -279,7 +279,9 @@ export default function Result() {
 
       const next = [entry, ...prev];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      alert('팔레트를 저장했습니다.\n상단 메뉴의 Palettes 페이지에서 확인할 수 있어요.');
+
+      // ✅ 저장 후 바로 /palettes로 이동
+      navigate('/palettes');
     } catch (e) {
       console.error(e);
       alert('팔레트 저장 중 오류가 발생했습니다.');
