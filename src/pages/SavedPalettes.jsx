@@ -4,6 +4,7 @@ const STORAGE_KEY = 'colorPalettes_v1';
 
 export default function SavedPalettes() {
   const [palettes, setPalettes] = useState([]);
+  const [exportMenuOpen, setExportMenuOpen] = useState(null);
 
   useEffect(() => {
     try {
@@ -16,6 +17,17 @@ export default function SavedPalettes() {
       console.error(e);
     }
   }, []);
+
+  // 외부 클릭 -> 메뉴 닫기
+  useEffect(() => {
+    const close = () => setExportMenuOpen(null);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, []);
+
+  const toggleExportMenu = (id) => {
+    setExportMenuOpen(prev => (prev === id ? null : id));
+  };
 
   const handleRefresh = () => {
     try {
@@ -45,35 +57,45 @@ export default function SavedPalettes() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
 
+  const handleRename = (id) => {
+    const newName = window.prompt('새 이름을 입력하세요:');
+    if (!newName) return;
+
+    const next = palettes.map(p =>
+      p.id === id ? { ...p, name: newName } : p
+    );
+
+    setPalettes(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  };
+
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: 20 }}>
+      {/* 상단 헤더 */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         gap: 10,
-        marginBottom: 16,
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        marginBottom: 16
       }}>
         <h2 style={{ margin: 0 }}>저장된 팔레트</h2>
+
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button
-            onClick={handleRefresh}
-            style={btn('#2d7ef7')}
-          >
+          <button onClick={handleRefresh} style={btn('#2d7ef7')}>
             새로고침
           </button>
+
           {palettes.length > 0 && (
-            <button
-              onClick={handleClearAll}
-              style={btn('#ef4444')}
-            >
+            <button onClick={handleClearAll} style={btn('#ef4444')}>
               전체 삭제
             </button>
           )}
         </div>
       </div>
 
+      {/* 비어있을 때 */}
       {palettes.length === 0 && (
         <p style={{ color: '#666' }}>
           아직 저장된 팔레트가 없습니다.<br />
@@ -81,6 +103,7 @@ export default function SavedPalettes() {
         </p>
       )}
 
+      {/* 팔레트 리스트 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {palettes.map((p, idx) => (
           <div
@@ -92,17 +115,21 @@ export default function SavedPalettes() {
               background: '#fafafa'
             }}
           >
-            {/* 헤더 */}
+            {/* 카드 헤더 */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              flexWrap: 'wrap',
               marginBottom: 8,
-              gap: 8
+              gap: 8,
+              position: 'relative'
             }}>
+
+              {/* 제목 */}
               <div>
                 <div style={{ fontWeight: 700 }}>
-                  팔레트 #{palettes.length - idx}
+                  {p.name || `팔레트 #${palettes.length - idx}`}
                 </div>
                 {p.createdAt && (
                   <div style={{ fontSize: 12, color: '#888' }}>
@@ -110,15 +137,116 @@ export default function SavedPalettes() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => handleDeleteOne(p.id)}
-                style={btn('#f97316')}
-              >
-                삭제
-              </button>
+
+              {/* 버튼 영역 */}
+              <div style={{
+                display: 'flex',
+                gap: 8,
+                position: 'relative',
+                flexWrap: 'wrap'
+              }}>
+                {/* 1) 이름 바꾸기 */}
+                <button
+                  onClick={() => handleRename(p.id)}
+                  style={btn('#10b981')}
+                >
+                  이름 바꾸기
+                </button>
+
+                {/* 2) 내보내기 */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleExportMenu(p.id);
+                  }}
+                  style={btn('#3b82f6')}
+                >
+                  내보내기
+                </button>
+
+                {/* 내보내기 메뉴 */}
+                {exportMenuOpen === p.id && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      position: 'absolute',
+                      top: '120%',
+                      right: 0,
+                      background: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 8,
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.08)',
+                      zIndex: 10,
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        downloadAco(p);
+                        setExportMenuOpen(null);
+                      }}
+                      style={menuItem()}
+                    >
+                      ACO
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        exportCss(p);
+                        setExportMenuOpen(null);
+                      }}
+                      style={menuItem()}
+                    >
+                      CSS
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        exportJson(p);
+                        setExportMenuOpen(null);
+                      }}
+                      style={menuItem()}
+                    >
+                      JSON
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        exportPng(p);
+                        setExportMenuOpen(null);
+                      }}
+                      style={menuItem()}
+                    >
+                      PNG
+                    </button>
+
+                    {/*grd 현재 작동 안함 */}
+                    {/* <button
+                      onClick={() => {
+                        exportGrd(p);
+                        setExportMenuOpen(null);
+                      }}
+                      style={menuItem()}
+                    >
+                      GRD
+                    </button> */}
+
+
+                  </div>
+                )}
+
+                {/* 3) 삭제 */}
+                <button
+                  onClick={() => handleDeleteOne(p.id)}
+                  style={btn('#f97316')}
+                >
+                  삭제
+                </button>
+              </div>
             </div>
 
-            {/* 색 바 (막대) */}
+            {/* 색 막대 */}
             <div style={{
               display: 'flex',
               borderRadius: 8,
@@ -139,7 +267,7 @@ export default function SavedPalettes() {
               ))}
             </div>
 
-            {/* 색 정보 리스트 */}
+            {/* 색 상세 목록 */}
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
@@ -181,6 +309,266 @@ export default function SavedPalettes() {
   );
 }
 
+/* ---------------------- ACO ---------------------- */
+
+function hexToRgb16(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) * 257;
+  const g = parseInt(hex.slice(3, 5), 16) * 257;
+  const b = parseInt(hex.slice(5, 7), 16) * 257;
+  return { r, g, b };
+}
+
+function createAco(colors) {
+  const count = colors.length;
+  const buffer = new ArrayBuffer(4 + count * 10);
+  const view = new DataView(buffer);
+
+  let offset = 0;
+  view.setUint16(offset, 1); offset += 2;
+  view.setUint16(offset, count); offset += 2;
+
+  for (const hex of colors) {
+    const { r, g, b } = hexToRgb16(hex);
+
+    view.setUint16(offset, 0); offset += 2;
+    view.setUint16(offset, r); offset += 2;
+    view.setUint16(offset, g); offset += 2;
+    view.setUint16(offset, b); offset += 2;
+    view.setUint16(offset, 0); offset += 2;
+  }
+
+  return buffer;
+}
+
+function downloadAco(palette) {
+  const colors = palette.colors.map(c => c.hex);
+  const buffer = createAco(colors);
+
+  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${palette.name || palette.id}.aco`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------------- CSS ---------------------- */
+
+function exportCss(palette) {
+  const lines = palette.colors.map((c, i) => `--color-${i + 1}: ${c.hex};`);
+  const css = `:root {\n  ${lines.join('\n  ')}\n}`;
+
+  const blob = new Blob([css], { type: 'text/css' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${palette.name || palette.id}.css`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------------- JSON ---------------------- */
+
+function exportJson(palette) {
+  const json = JSON.stringify(palette.colors, null, 2);
+
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${palette.name || palette.id}.json`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------------- PNG ---------------------- */
+
+function exportPng(palette) {
+  const colors = palette.colors || [];
+  const width = 600;
+  const height = 80;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  let x = 0;
+  let totalPct = colors.reduce((acc, c) => acc + (c.pct || 1), 0);
+
+  for (const c of colors) {
+    const w = (c.pct || 1) / totalPct * width;
+    ctx.fillStyle = c.hex;
+    ctx.fillRect(x, 0, w, height);
+    x += w;
+  }
+
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${palette.name || palette.id}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+
+/* ---------------------- GRD (현재 제대로 작동 안함, 아마도 제대로 어려울 것 같습니다) ---------------------- */
+
+// Version 3는 Opacity를 0-255로 사용
+function rgb16To8(v16) {
+    return Math.round(v16 / 257); // 65535 -> 255
+}
+
+
+function createGrd(palette) {
+    const colors = palette.colors;
+    const count = colors.length;
+    if (count < 2) {
+        return new ArrayBuffer(0);
+    }
+
+    const name = palette.name || palette.id;
+    // 명세에 따라 Pascal String (1 byte length + char bytes)
+    const nameLength = name.length;
+    const pascalStringLength = 1 + nameLength; // 1 byte for length + chars
+
+    // Padding for Gradient Name (Pascal string) to be multiple of 2 bytes
+    const namePadding = (nameLength % 2 === 0) ? 1 : 0; // Length byte + string length + 1 (if needed) to make it even
+    const gradientNameSize = pascalStringLength + namePadding;
+
+
+    // 총 길이 계산 (Version 3)
+    let totalLength = 0;
+    totalLength += 4; // File Signature '8BGR' (4*char)
+    totalLength += 2; // Version (int16: 3)
+    totalLength += 2; // Gradient Count (int16: 1)
+
+    // 1. 그라데이션 이름 레코드
+    totalLength += gradientNameSize;
+
+    // 2. 그라데이션 데이터 레코드 헤더
+    totalLength += 2; // Number of Stops (int16)
+
+    // 3. Color Stops
+    // Stop Offset (int32) + Midpoint (int32) + Color Model (int16) + Color Values (4*int16) + Color Type (int16)
+    const colorStopSize = 4 + 4 + 2 + 8 + 2; 
+    totalLength += count * colorStopSize;
+
+    // 4. Transparency Stops
+    totalLength += 2; // Number of Transparency Stops (int16)
+    // Transparency Stop Offset (int32) + Midpoint (int32) + Opacity (int16) + Reserved (6 bytes)
+    const transparencyStopSize = 4 + 4 + 2 + 6;
+    totalLength += count * transparencyStopSize; 
+    
+    // Version 3에는 Midpoint List가 없음.
+
+    const buffer = new ArrayBuffer(totalLength);
+    const view = new DataView(buffer);
+    const isBigEndian = false; // 포토샵 표준: Big-Endian
+
+    let offset = 0;
+
+    // ------------------- 1. File Header -------------------
+    // File Signature: '8BGR' (56 47 52 52)
+    view.setUint32(offset, 0x38424752, isBigEndian); offset += 4; 
+    // Version: 3 (int16)
+    view.setUint16(offset, 3, isBigEndian); offset += 2;
+    // Gradient Count: 1 (int16)
+    view.setUint16(offset, 1, isBigEndian); offset += 2; 
+
+    // ------------------- 2. Gradient Data (Single Gradient) -------------------
+    // Gradient Name (Pascal String)
+    view.setUint8(offset, nameLength); offset += 1; // Length byte
+    for (let i = 0; i < nameLength; i++) {
+        view.setUint8(offset, name.charCodeAt(i)); offset += 1;
+    }
+    // Padding (to make string size even)
+    if (namePadding > 0) {
+        view.setUint8(offset, 0); offset += 1;
+    }
+
+    // Number of Stops (int16)
+    view.setUint16(offset, count, isBigEndian); offset += 2;
+    
+    // Stop Location Step: 0 to 4096 (int32)
+    const step = 4096 / (count - 1);
+    
+    // ------------------- 3. Color Stops -------------------
+    for (let i = 0; i < count; i++) {
+        const hex = colors[i].hex;
+        const { r, g, b } = hexToRgb16(hex);
+
+        // Stop Offset (int32: [0:4096])
+        const location = Math.min(4096, Math.round(step * i));
+        view.setInt32(offset, location, isBigEndian); offset += 4; 
+        
+        // Stop Midpoint (int32: [%]) - Default 50%
+        view.setInt32(offset, 50, isBigEndian); offset += 4; 
+        
+        // Color Model (int16: 0 = RGB)
+        view.setUint16(offset, 0, isBigEndian); offset += 2; 
+
+        // Color Values (4*int16) - Use RGB and 0 for fourth value
+        view.setUint16(offset, r, isBigEndian); offset += 2; // R (0-65535)
+        view.setUint16(offset, g, isBigEndian); offset += 2; // G (0-65535)
+        view.setUint16(offset, b, isBigEndian); offset += 2; // B (0-65535)
+        view.setUint16(offset, 0, isBigEndian); offset += 2; // Fourth Value (CMYK, Lab 등에서 사용)
+
+        // Color Type (int16: 0 = User color)
+        view.setUint16(offset, 0, isBigEndian); offset += 2;
+    }
+
+    // ------------------- 4. Transparency Stops -------------------
+    // Number of Transparency Stops (int16)
+    view.setUint16(offset, count, isBigEndian); offset += 2;
+
+    for (let i = 0; i < count; i++) {
+        const location = Math.min(4096, Math.round(step * i));
+        
+        // Transparency Stop Offset (int32: [0:4096])
+        view.setInt32(offset, location, isBigEndian); offset += 4;
+        
+        // Transparency Stop Midpoint (int32: [%]) - Default 50%
+        view.setInt32(offset, 50, isBigEndian); offset += 4;
+
+        // Opacity (int16: [0:255]) - 255 = 100%
+        view.setUint16(offset, 255, isBigEndian); offset += 2;
+
+        // Reserved for future use (6 bytes, always 0)
+        view.setUint32(offset, 0, isBigEndian); offset += 4;
+        view.setUint16(offset, 0, isBigEndian); offset += 2;
+    }
+
+    return buffer;
+}
+
+function exportGrd(palette) {
+  const buffer = createGrd(palette);
+
+  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${palette.name || palette.id}.grd`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+
+
+/* ---------------------- STYLE HELPERS ---------------------- */
+
 function btn(bg) {
   return {
     background: bg,
@@ -191,6 +579,19 @@ function btn(bg) {
     cursor: 'pointer',
     fontSize: 13,
     fontWeight: 600,
-    lineHeight: 1.2
+    lineHeight: 1.2,
+    whiteSpace: 'nowrap'
+  };
+}
+
+function menuItem() {
+  return {
+    padding: '8px 12px',
+    fontSize: 13,
+    background: 'white',
+    border: 'none',
+    textAlign: 'left',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap'
   };
 }

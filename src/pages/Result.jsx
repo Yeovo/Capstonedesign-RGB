@@ -251,6 +251,7 @@ export default function Result() {
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
         // 원래 이미지 경로나 메모를 넣고 싶으면 여기 추가 가능
+        name: '',
         colors: palette.map(p => ({
           hex: p.hex,
           name: p.name,
