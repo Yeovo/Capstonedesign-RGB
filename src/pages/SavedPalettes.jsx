@@ -26,7 +26,7 @@ export default function SavedPalettes() {
   }, []);
 
   const toggleExportMenu = (id) => {
-    setExportMenuOpen(prev => (prev === id ? null : id));
+    setExportMenuOpen((prev) => (prev === id ? null : id));
   };
 
   const handleRefresh = () => {
@@ -52,7 +52,7 @@ export default function SavedPalettes() {
 
   const handleDeleteOne = (id) => {
     if (!window.confirm('이 팔레트를 삭제할까요?')) return;
-    const next = palettes.filter(p => p.id !== id);
+    const next = palettes.filter((p) => p.id !== id);
     setPalettes(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
@@ -61,7 +61,7 @@ export default function SavedPalettes() {
     const newName = window.prompt('새 이름을 입력하세요:');
     if (!newName) return;
 
-    const next = palettes.map(p =>
+    const next = palettes.map((p) =>
       p.id === id ? { ...p, name: newName } : p
     );
 
@@ -72,14 +72,16 @@ export default function SavedPalettes() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: 20 }}>
       {/* 상단 헤더 */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 10,
-        flexWrap: 'wrap',
-        marginBottom: 16
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 10,
+          flexWrap: 'wrap',
+          marginBottom: 16,
+        }}
+      >
         <h2 style={{ margin: 0 }}>저장된 팔레트</h2>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -98,7 +100,8 @@ export default function SavedPalettes() {
       {/* 비어있을 때 */}
       {palettes.length === 0 && (
         <p style={{ color: '#666' }}>
-          아직 저장된 팔레트가 없습니다.<br />
+          아직 저장된 팔레트가 없습니다.
+          <br />
           이미지 분석 후 <strong>“현재 팔레트 저장”</strong> 버튼을 눌러 보세요.
         </p>
       )}
@@ -112,20 +115,21 @@ export default function SavedPalettes() {
               border: '1px solid #e5e7eb',
               borderRadius: 12,
               padding: 12,
-              background: '#fafafa'
+              background: '#fafafa',
             }}
           >
             {/* 카드 헤더 */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              marginBottom: 8,
-              gap: 8,
-              position: 'relative'
-            }}>
-
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                marginBottom: 8,
+                gap: 8,
+                position: 'relative',
+              }}
+            >
               {/* 제목 */}
               <div>
                 <div style={{ fontWeight: 700 }}>
@@ -139,17 +143,16 @@ export default function SavedPalettes() {
               </div>
 
               {/* 버튼 영역 */}
-              <div style={{
-                display: 'flex',
-                gap: 8,
-                position: 'relative',
-                flexWrap: 'wrap'
-              }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  position: 'relative',
+                  flexWrap: 'wrap',
+                }}
+              >
                 {/* 1) 이름 바꾸기 */}
-                <button
-                  onClick={() => handleRename(p.id)}
-                  style={btn('#10b981')}
-                >
+                <button onClick={() => handleRename(p.id)} style={btn('#10b981')}>
                   이름 바꾸기
                 </button>
 
@@ -178,7 +181,7 @@ export default function SavedPalettes() {
                       boxShadow: '0 4px 10px rgba(0,0,0,0.08)',
                       zIndex: 10,
                       display: 'flex',
-                      flexDirection: 'column'
+                      flexDirection: 'column',
                     }}
                   >
                     <button
@@ -221,8 +224,9 @@ export default function SavedPalettes() {
                       PNG
                     </button>
 
-                    {/*grd 현재 작동 안함 */}
-                    {/* <button
+                    {/* GRD 현재 작동 안함 */}
+                    {/* 
+                    <button
                       onClick={() => {
                         exportGrd(p);
                         setExportMenuOpen(null);
@@ -230,9 +234,8 @@ export default function SavedPalettes() {
                       style={menuItem()}
                     >
                       GRD
-                    </button> */}
-
-
+                    </button>
+                    */}
                   </div>
                 )}
 
@@ -247,20 +250,22 @@ export default function SavedPalettes() {
             </div>
 
             {/* 색 막대 */}
-            <div style={{
-              display: 'flex',
-              borderRadius: 8,
-              overflow: 'hidden',
-              height: 34,
-              marginBottom: 8
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                borderRadius: 8,
+                overflow: 'hidden',
+                height: 34,
+                marginBottom: 8,
+              }}
+            >
               {(p.colors || []).map((c, i) => (
                 <div
                   key={i}
                   style={{
                     flex: c.pct > 0 ? c.pct : 1,
                     background: c.hex,
-                    minWidth: 24
+                    minWidth: 24,
                   }}
                   title={`${c.name || ''} ${c.hex} (${c.pct?.toFixed?.(1) ?? '0.0'}%)`}
                 />
@@ -268,11 +273,13 @@ export default function SavedPalettes() {
             </div>
 
             {/* 색 상세 목록 */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 8,
+              }}
+            >
               {(p.colors || []).map((c, i) => (
                 <div
                   key={i}
@@ -284,16 +291,18 @@ export default function SavedPalettes() {
                     borderRadius: 8,
                     background: '#ffffff',
                     border: '1px solid #e5e7eb',
-                    fontSize: 12
+                    fontSize: 12,
                   }}
                 >
-                  <span style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 4,
-                    background: c.hex,
-                    border: '1px solid #e5e7eb'
-                  }} />
+                  <span
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: 4,
+                      background: c.hex,
+                      border: '1px solid #e5e7eb',
+                    }}
+                  />
                   <span>{c.name || '(이름 없음)'}</span>
                   <code style={{ color: '#4b5563' }}>{c.hex}</code>
                   <span style={{ color: '#9ca3af' }}>
@@ -302,6 +311,33 @@ export default function SavedPalettes() {
                 </div>
               ))}
             </div>
+
+            {/* 태그 리스트 */}
+            {p.tags && p.tags.length > 0 && (
+              <div
+                style={{
+                  marginTop: 8,
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 6,
+                }}
+              >
+                {p.tags.map((tag, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: 999,
+                      background: '#e5e7eb',
+                      fontSize: 11,
+                      color: '#374151',
+                    }}
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -324,30 +360,37 @@ function createAco(colors) {
   const view = new DataView(buffer);
 
   let offset = 0;
-  view.setUint16(offset, 1); offset += 2;
-  view.setUint16(offset, count); offset += 2;
+  view.setUint16(offset, 1);
+  offset += 2;
+  view.setUint16(offset, count);
+  offset += 2;
 
   for (const hex of colors) {
     const { r, g, b } = hexToRgb16(hex);
 
-    view.setUint16(offset, 0); offset += 2;
-    view.setUint16(offset, r); offset += 2;
-    view.setUint16(offset, g); offset += 2;
-    view.setUint16(offset, b); offset += 2;
-    view.setUint16(offset, 0); offset += 2;
+    view.setUint16(offset, 0);
+    offset += 2;
+    view.setUint16(offset, r);
+    offset += 2;
+    view.setUint16(offset, g);
+    offset += 2;
+    view.setUint16(offset, b);
+    offset += 2;
+    view.setUint16(offset, 0);
+    offset += 2;
   }
 
   return buffer;
 }
 
 function downloadAco(palette) {
-  const colors = palette.colors.map(c => c.hex);
+  const colors = palette.colors.map((c) => c.hex);
   const buffer = createAco(colors);
 
-  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  const blob = new Blob([buffer], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = `${palette.name || palette.id}.aco`;
   a.click();
@@ -401,10 +444,10 @@ function exportPng(palette) {
   const ctx = canvas.getContext('2d');
 
   let x = 0;
-  let totalPct = colors.reduce((acc, c) => acc + (c.pct || 1), 0);
+  const totalPct = colors.reduce((acc, c) => acc + (c.pct || 1), 0);
 
   for (const c of colors) {
-    const w = (c.pct || 1) / totalPct * width;
+    const w = ((c.pct || 1) / totalPct) * width;
     ctx.fillStyle = c.hex;
     ctx.fillRect(x, 0, w, height);
     x += w;
@@ -420,152 +463,134 @@ function exportPng(palette) {
   });
 }
 
+/* ---------------------- GRD (현재 제대로 작동 안함) ---------------------- */
 
-/* ---------------------- GRD (현재 제대로 작동 안함, 아마도 제대로 어려울 것 같습니다) ---------------------- */
-
-// Version 3는 Opacity를 0-255로 사용
 function rgb16To8(v16) {
-    return Math.round(v16 / 257); // 65535 -> 255
+  return Math.round(v16 / 257);
 }
 
-
 function createGrd(palette) {
-    const colors = palette.colors;
-    const count = colors.length;
-    if (count < 2) {
-        return new ArrayBuffer(0);
-    }
+  const colors = palette.colors;
+  const count = colors.length;
+  if (count < 2) {
+    return new ArrayBuffer(0);
+  }
 
-    const name = palette.name || palette.id;
-    // 명세에 따라 Pascal String (1 byte length + char bytes)
-    const nameLength = name.length;
-    const pascalStringLength = 1 + nameLength; // 1 byte for length + chars
+  const name = palette.name || palette.id;
+  const nameLength = name.length;
+  const pascalStringLength = 1 + nameLength;
+  const namePadding = nameLength % 2 === 0 ? 1 : 0;
+  const gradientNameSize = pascalStringLength + namePadding;
 
-    // Padding for Gradient Name (Pascal string) to be multiple of 2 bytes
-    const namePadding = (nameLength % 2 === 0) ? 1 : 0; // Length byte + string length + 1 (if needed) to make it even
-    const gradientNameSize = pascalStringLength + namePadding;
+  let totalLength = 0;
+  totalLength += 4;
+  totalLength += 2;
+  totalLength += 2;
 
+  totalLength += gradientNameSize;
 
-    // 총 길이 계산 (Version 3)
-    let totalLength = 0;
-    totalLength += 4; // File Signature '8BGR' (4*char)
-    totalLength += 2; // Version (int16: 3)
-    totalLength += 2; // Gradient Count (int16: 1)
+  totalLength += 2;
 
-    // 1. 그라데이션 이름 레코드
-    totalLength += gradientNameSize;
+  const colorStopSize = 4 + 4 + 2 + 8 + 2;
+  totalLength += count * colorStopSize;
 
-    // 2. 그라데이션 데이터 레코드 헤더
-    totalLength += 2; // Number of Stops (int16)
+  totalLength += 2;
+  const transparencyStopSize = 4 + 4 + 2 + 6;
+  totalLength += count * transparencyStopSize;
 
-    // 3. Color Stops
-    // Stop Offset (int32) + Midpoint (int32) + Color Model (int16) + Color Values (4*int16) + Color Type (int16)
-    const colorStopSize = 4 + 4 + 2 + 8 + 2; 
-    totalLength += count * colorStopSize;
+  const buffer = new ArrayBuffer(totalLength);
+  const view = new DataView(buffer);
+  const isBigEndian = false;
 
-    // 4. Transparency Stops
-    totalLength += 2; // Number of Transparency Stops (int16)
-    // Transparency Stop Offset (int32) + Midpoint (int32) + Opacity (int16) + Reserved (6 bytes)
-    const transparencyStopSize = 4 + 4 + 2 + 6;
-    totalLength += count * transparencyStopSize; 
-    
-    // Version 3에는 Midpoint List가 없음.
+  let offset = 0;
 
-    const buffer = new ArrayBuffer(totalLength);
-    const view = new DataView(buffer);
-    const isBigEndian = false; // 포토샵 표준: Big-Endian
+  view.setUint32(offset, 0x38424752, isBigEndian);
+  offset += 4;
+  view.setUint16(offset, 3, isBigEndian);
+  offset += 2;
+  view.setUint16(offset, 1, isBigEndian);
+  offset += 2;
 
-    let offset = 0;
+  view.setUint8(offset, nameLength);
+  offset += 1;
+  for (let i = 0; i < nameLength; i++) {
+    view.setUint8(offset, name.charCodeAt(i));
+    offset += 1;
+  }
+  if (namePadding > 0) {
+    view.setUint8(offset, 0);
+    offset += 1;
+  }
 
-    // ------------------- 1. File Header -------------------
-    // File Signature: '8BGR' (56 47 52 52)
-    view.setUint32(offset, 0x38424752, isBigEndian); offset += 4; 
-    // Version: 3 (int16)
-    view.setUint16(offset, 3, isBigEndian); offset += 2;
-    // Gradient Count: 1 (int16)
-    view.setUint16(offset, 1, isBigEndian); offset += 2; 
+  view.setUint16(offset, count, isBigEndian);
+  offset += 2;
 
-    // ------------------- 2. Gradient Data (Single Gradient) -------------------
-    // Gradient Name (Pascal String)
-    view.setUint8(offset, nameLength); offset += 1; // Length byte
-    for (let i = 0; i < nameLength; i++) {
-        view.setUint8(offset, name.charCodeAt(i)); offset += 1;
-    }
-    // Padding (to make string size even)
-    if (namePadding > 0) {
-        view.setUint8(offset, 0); offset += 1;
-    }
+  const step = 4096 / (count - 1);
 
-    // Number of Stops (int16)
-    view.setUint16(offset, count, isBigEndian); offset += 2;
-    
-    // Stop Location Step: 0 to 4096 (int32)
-    const step = 4096 / (count - 1);
-    
-    // ------------------- 3. Color Stops -------------------
-    for (let i = 0; i < count; i++) {
-        const hex = colors[i].hex;
-        const { r, g, b } = hexToRgb16(hex);
+  for (let i = 0; i < count; i++) {
+    const hex = colors[i].hex;
+    const { r, g, b } = hexToRgb16(hex);
 
-        // Stop Offset (int32: [0:4096])
-        const location = Math.min(4096, Math.round(step * i));
-        view.setInt32(offset, location, isBigEndian); offset += 4; 
-        
-        // Stop Midpoint (int32: [%]) - Default 50%
-        view.setInt32(offset, 50, isBigEndian); offset += 4; 
-        
-        // Color Model (int16: 0 = RGB)
-        view.setUint16(offset, 0, isBigEndian); offset += 2; 
+    const location = Math.min(4096, Math.round(step * i));
+    view.setInt32(offset, location, isBigEndian);
+    offset += 4;
 
-        // Color Values (4*int16) - Use RGB and 0 for fourth value
-        view.setUint16(offset, r, isBigEndian); offset += 2; // R (0-65535)
-        view.setUint16(offset, g, isBigEndian); offset += 2; // G (0-65535)
-        view.setUint16(offset, b, isBigEndian); offset += 2; // B (0-65535)
-        view.setUint16(offset, 0, isBigEndian); offset += 2; // Fourth Value (CMYK, Lab 등에서 사용)
+    view.setInt32(offset, 50, isBigEndian);
+    offset += 4;
 
-        // Color Type (int16: 0 = User color)
-        view.setUint16(offset, 0, isBigEndian); offset += 2;
-    }
+    view.setUint16(offset, 0, isBigEndian);
+    offset += 2;
 
-    // ------------------- 4. Transparency Stops -------------------
-    // Number of Transparency Stops (int16)
-    view.setUint16(offset, count, isBigEndian); offset += 2;
+    view.setUint16(offset, r, isBigEndian);
+    offset += 2;
+    view.setUint16(offset, g, isBigEndian);
+    offset += 2;
+    view.setUint16(offset, b, isBigEndian);
+    offset += 2;
+    view.setUint16(offset, 0, isBigEndian);
+    offset += 2;
 
-    for (let i = 0; i < count; i++) {
-        const location = Math.min(4096, Math.round(step * i));
-        
-        // Transparency Stop Offset (int32: [0:4096])
-        view.setInt32(offset, location, isBigEndian); offset += 4;
-        
-        // Transparency Stop Midpoint (int32: [%]) - Default 50%
-        view.setInt32(offset, 50, isBigEndian); offset += 4;
+    view.setUint16(offset, 0, isBigEndian);
+    offset += 2;
+  }
 
-        // Opacity (int16: [0:255]) - 255 = 100%
-        view.setUint16(offset, 255, isBigEndian); offset += 2;
+  view.setUint16(offset, count, isBigEndian);
+  offset += 2;
 
-        // Reserved for future use (6 bytes, always 0)
-        view.setUint32(offset, 0, isBigEndian); offset += 4;
-        view.setUint16(offset, 0, isBigEndian); offset += 2;
-    }
+  for (let i = 0; i < count; i++) {
+    const location = Math.min(4096, Math.round(step * i));
 
-    return buffer;
+    view.setInt32(offset, location, isBigEndian);
+    offset += 4;
+
+    view.setInt32(offset, 50, isBigEndian);
+    offset += 4;
+
+    view.setUint16(offset, 255, isBigEndian);
+    offset += 2;
+
+    view.setUint32(offset, 0, isBigEndian);
+    offset += 4;
+    view.setUint16(offset, 0, isBigEndian);
+    offset += 2;
+  }
+
+  return buffer;
 }
 
 function exportGrd(palette) {
   const buffer = createGrd(palette);
 
-  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  const blob = new Blob([buffer], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = `${palette.name || palette.id}.grd`;
   a.click();
 
   URL.revokeObjectURL(url);
 }
-
-
 
 /* ---------------------- STYLE HELPERS ---------------------- */
 
@@ -580,7 +605,7 @@ function btn(bg) {
     fontSize: 13,
     fontWeight: 600,
     lineHeight: 1.2,
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
   };
 }
 
@@ -592,6 +617,6 @@ function menuItem() {
     border: 'none',
     textAlign: 'left',
     cursor: 'pointer',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
   };
 }
