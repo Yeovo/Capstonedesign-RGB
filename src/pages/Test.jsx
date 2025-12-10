@@ -1,450 +1,1143 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 
 /**
- * 색각 민감도 스크리닝 프로토타입 (확장판)
- * - grid odd-one-out 모드만 구현 (3x3 중 다른 칸 클릭)
- * - axis:
- *    'a'     → 빨강-초록 계열(L/M 축)
- *    'b'     → 파랑-노랑 계열(S 축)
- *    'both'  → 전반 채도/대비 감지
- *
- * ⚠ 의학적 진단용 아님. 참고/연습/연구용.
+ * 색각 캘리브레이터 v6 - 격자 샘플링
+ * 
+ * 4단계 점진적 좁히기:
+ * 1. 넓은 격자 (45° 간격) - 대략적 혼동 영역 찾기
+ * 2. 중간 격자 (15° 간격) - 선택한 영역 주변 탐색
+ * 3. 세밀 격자 (5° 간격) - 정밀한 혼동 쌍 확정
+ * 4. 혼동선 폭 측정 - 확정된 쌍에서 ±1~8° 테스트
  */
 
-/* ===================== 색공간 유틸 ===================== */
+const STORAGE_KEY = "colorVisionProfile_v6";
 
-function srgbToLinear(c) {
-  const x = c / 255;
-  return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
-}
-function linearToSrgb(x) {
-  const v = x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
-  return Math.round(Math.min(1, Math.max(0, v)) * 255);
-}
+// ============================
+// HSL 색공간 변환
+// ============================
 
-function xyzToRgb(xyz) {
-  const { X, Y, Z } = xyz;
-  const R =  3.2404542*X -1.5371385*Y -0.4985314*Z;
-  const G = -0.9692660*X +1.8760108*Y +0.0415560*Z;
-  const B =  0.0556434*X -0.2040259*Y +1.0572252*Z;
-  return {
-    r: linearToSrgb(R),
-    g: linearToSrgb(G),
-    b: linearToSrgb(B),
-  };
+function hslToRgb(h, s, l) {
+  s /= 100;
+  l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n =>
+    l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [
+    Math.round(255 * f(0)),
+    Math.round(255 * f(8)),
+    Math.round(255 * f(4))
+  ];
 }
 
-function rgbToXyz(rgb) {
-  const R = srgbToLinear(rgb.r),
-        G = srgbToLinear(rgb.g),
-        B = srgbToLinear(rgb.b);
-  const X = R*0.4124564 + G*0.3575761 + B*0.1804375;
-  const Y = R*0.2126729 + G*0.7151522 + B*0.0721750;
-  const Z = R*0.0193339 + G*0.1191920 + B*0.9503041;
-  return { X, Y, Z };
-}
+// ============================
+// 점 패턴 생성
+// ============================
 
-function fLab(t) {
-  return t > 0.008856 ? Math.cbrt(t) : (7.787 * t + 16/116);
-}
-function invfLab(t) {
-  const t3 = t*t*t;
-  return t3 > 0.008856 ? t3 : (t - 16/116)/7.787;
-}
-
-// XYZ <-> Lab (D65)
-function xyzToLab(xyz) {
-  const Xn=0.95047, Yn=1.00000, Zn=1.08883;
-  const fx = fLab(xyz.X/Xn),
-        fy = fLab(xyz.Y/Yn),
-        fz = fLab(xyz.Z/Zn);
-  return {
-    L: 116*fy -16,
-    a: 500*(fx - fy),
-    b: 200*(fy - fz),
-  };
-}
-function labToXyz(lab) {
-  const { L,a,b } = lab;
-  const fy = (L + 16)/116;
-  const fx = fy + a/500;
-  const fz = fy - b/200;
-  const Xn=0.95047, Yn=1.00000, Zn=1.08883;
-  return {
-    X: Xn*invfLab(fx),
-    Y: Yn*invfLab(fy),
-    Z: Zn*invfLab(fz),
-  };
-}
-function labToRgb(lab) {
-  return xyzToRgb(labToXyz(lab));
-}
-
-/**
- * 축 방향으로 delta만큼 이동한 색 만들기.
- * axis: 'a' | 'b' | 'both'
- */
-function makeVariantColors(baseLab, axis, delta) {
-  const sameRGB = labToRgb(baseLab);
-
-  let shiftedLab;
-  if (axis === 'a') {
-    shiftedLab = { ...baseLab, a: baseLab.a + delta };
-  } else if (axis === 'b') {
-    shiftedLab = { ...baseLab, b: baseLab.b + delta };
-  } else {
-    shiftedLab = {
-      ...baseLab,
-      a: baseLab.a + delta,
-      b: baseLab.b + delta,
-    };
+function generateDots(width, height, count) {
+  const dots = [];
+  for (let i = 0; i < count; i++) {
+    dots.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      r: Math.random() * 2.5 + 2,
+    });
   }
-
-  const diffRGB = labToRgb(shiftedLab);
-  return [sameRGB, diffRGB];
+  return dots;
 }
 
-/**
- * 3x3 격자에서 하나만 diffRGB로 칠한다.
- */
-function drawGrid(ctx, baseRGB, diffRGB, diffIndex) {
-  const size = Math.min(ctx.canvas.width, ctx.canvas.height);
-  const cell = size / 3;
+function isNumber5(x, y, width, height) {
+  const nx = x / width;
+  const ny = y / height;
+  const cx = 0.5, cy = 0.5;
+  const size = 0.22;
+  
+  if (nx > cx - size && nx < cx + size && ny > cy - size * 1.1 && ny < cy - size * 0.8) return true;
+  if (nx > cx - size && nx < cx - size * 0.6 && ny > cy - size * 1.1 && ny < cy - size * 0.1) return true;
+  if (nx > cx - size && nx < cx + size && ny > cy - size * 0.15 && ny < cy + size * 0.15) return true;
+  if (nx > cx + size * 0.6 && cx < cx + size && ny > cy + size * 0.1 && ny < cy + size * 1.1) return true;
+  if (nx > cx - size && nx < cx + size && ny > cy + size * 0.8 && ny < cy + size * 1.1) return true;
+  
+  return false;
+}
 
-  for (let i=0; i<9; i++){
-    const x = (i%3)*cell;
-    const y = Math.floor(i/3)*cell;
-    const c = (i===diffIndex) ? diffRGB : baseRGB;
-    ctx.fillStyle = `rgb(${c.r},${c.g},${c.b})`;
-    ctx.fillRect(x,y,cell,cell);
+// ============================
+// 색상 쌍 생성 (같은 색 제외, 중복 제거)
+// ============================
+
+function generateColorPairs(interval, centerHueA = null, centerHueB = null, range = 180) {
+  const pairs = [];
+  const saturation = 70;
+  const lightness = 50;
+  const minAngleDiff = 60; // 최소 60° 차이
+  const seen = new Set(); // 중복 체크용
+  
+  // 중심이 지정되면 그 주변만, 아니면 전체 범위
+  const startA = centerHueA !== null ? centerHueA - range / 2 : 0;
+  const endA = centerHueA !== null ? centerHueA + range / 2 : 360;
+  
+  for (let hueA = startA; hueA < endA; hueA += interval) {
+    const normalizedA = ((hueA % 360) + 360) % 360;
+    
+    const startB = centerHueB !== null ? centerHueB - range / 2 : 0;
+    const endB = centerHueB !== null ? centerHueB + range / 2 : 360;
+    
+    for (let hueB = startB; hueB < endB; hueB += interval) {
+      const normalizedB = ((hueB % 360) + 360) % 360;
+      
+      // 각도 차이 계산 (최단 거리)
+      let diff = Math.abs(normalizedB - normalizedA);
+      if (diff > 180) diff = 360 - diff;
+      
+      // 너무 가까운 색은 제외
+      if (diff >= minAngleDiff && diff <= 300) {
+        // 중복 체크: 작은 값을 먼저, 큰 값을 나중에 (정규화)
+        const min = Math.min(normalizedA, normalizedB);
+        const max = Math.max(normalizedA, normalizedB);
+        const key = `${min}-${max}`;
+        
+        // 이미 존재하는 쌍이면 스킵
+        if (seen.has(key)) continue;
+        seen.add(key);
+        
+        pairs.push({
+          hueA: normalizedA,
+          hueB: normalizedB,
+          colorA: hslToRgb(normalizedA, saturation, lightness),
+          colorB: hslToRgb(normalizedB, saturation, lightness),
+          saturation,
+          lightness
+        });
+      }
+    }
   }
+  
+  return pairs;
 }
 
-/* ===================== 문제 풀 정의 ===================== */
+// ============================
+// CVD 유형 추론
+// ============================
 
-const QUESTIONS_TEMPLATE = [
-  // L/M 축 palette 1
-  { axis:'a', difficulty:'easy', palette:1, mode:'grid',
-    baseLab:{ L:60, a:20, b:20 }, delta:10 },
-  { axis:'a', difficulty:'mid',  palette:1, mode:'grid',
-    baseLab:{ L:60, a:20, b:20 }, delta:6  },
-  { axis:'a', difficulty:'hard', palette:1, mode:'grid',
-    baseLab:{ L:60, a:20, b:20 }, delta:3  },
-
-  // L/M 축 palette 2
-  { axis:'a', difficulty:'easy', palette:2, mode:'grid',
-    baseLab:{ L:55, a:30, b:25 }, delta:10 },
-  { axis:'a', difficulty:'mid',  palette:2, mode:'grid',
-    baseLab:{ L:55, a:30, b:25 }, delta:6  },
-  { axis:'a', difficulty:'hard', palette:2, mode:'grid',
-    baseLab:{ L:55, a:30, b:25 }, delta:3  },
-
-  // S 축 palette 1
-  { axis:'b', difficulty:'easy', palette:1, mode:'grid',
-    baseLab:{ L:60, a:0,  b:5  }, delta:10 },
-  { axis:'b', difficulty:'mid',  palette:1, mode:'grid',
-    baseLab:{ L:60, a:0,  b:5  }, delta:6  },
-  { axis:'b', difficulty:'hard', palette:1, mode:'grid',
-    baseLab:{ L:60, a:0,  b:5  }, delta:3  },
-
-  // S 축 palette 2
-  { axis:'b', difficulty:'easy', palette:2, mode:'grid',
-    baseLab:{ L:50, a:15, b:-30 }, delta:10 },
-  { axis:'b', difficulty:'mid',  palette:2, mode:'grid',
-    baseLab:{ L:50, a:15, b:-30 }, delta:6  },
-  { axis:'b', difficulty:'hard', palette:2, mode:'grid',
-    baseLab:{ L:50, a:15, b:-30 }, delta:3  },
-
-  // 전반 대비 / 채도 민감도
-  { axis:'both', difficulty:'easy', palette:1, mode:'grid',
-    baseLab:{ L:60, a:2,  b:2  }, delta:8  },
-  { axis:'both', difficulty:'mid',  palette:1, mode:'grid',
-    baseLab:{ L:60, a:2,  b:2  }, delta:4  },
-  { axis:'both', difficulty:'hard', palette:1, mode:'grid',
-    baseLab:{ L:60, a:2,  b:2  }, delta:2  },
-];
-
-const SECONDS_PER_QUESTION = 22;
-
-/* ===================== 메인 컴포넌트 ===================== */
-export default function ColorVisionScreening() {
-  // 질문 세트 초기화 (diffIndex 랜덤)
-  const [questions] = useState(() =>
-    QUESTIONS_TEMPLATE.map((q, idx) => ({
-      ...q,
-      id: `${q.axis}_${q.difficulty}_p${q.palette}_${idx}`,
-      diffIndex: Math.floor(Math.random()*9),
-    }))
-  );
-
-  const total = questions.length;
-
-  const [idx, setIdx] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [remaining, setRemaining] = useState(SECONDS_PER_QUESTION);
-  const [running, setRunning] = useState(true);
-
-  const startRef = useRef(Date.now());
-  const canvasRef = useRef(null);
-
-  const currentQ = questions[idx];
-  const done = answers.length === total;
-
-  // 캔버스 렌더링
-  useEffect(() => {
-    const cvs = canvasRef.current;
-    if (!cvs) return;
-    const ctx = cvs.getContext('2d');
-    if (!ctx) return;
-
-    const [baseRGB, diffRGB] = makeVariantColors(
-      currentQ.baseLab,
-      currentQ.axis,
-      currentQ.delta
+function inferCVDType(hueA, hueB) {
+  // 각 CVD 유형의 혼동 축 정의
+  const cvdAxes = {
+    protan: [0, 180],    // 빨강-청록
+    deutan: [30, 190],   // 주황-청록
+    tritan: [60, 240]    // 노랑-보라
+  };
+  
+  // 측정된 색상 쌍을 정규화 (작은 값, 큰 값 순서)
+  const measured = [Math.min(hueA, hueB), Math.max(hueA, hueB)];
+  
+  // 각 CVD 축과의 거리 계산
+  const distances = {};
+  
+  Object.entries(cvdAxes).forEach(([type, axis]) => {
+    // 축의 두 점과 측정된 쌍의 각 점 사이 거리의 합
+    // 측정된 쌍이 축에 가까울수록 거리 합이 작음
+    
+    // measured[0]과 axis 중 가까운 것
+    const dist1_0 = Math.min(
+      Math.abs(measured[0] - axis[0]),
+      Math.abs(measured[0] - axis[1]),
+      360 - Math.abs(measured[0] - axis[0]),
+      360 - Math.abs(measured[0] - axis[1])
     );
+    
+    // measured[1]과 axis 중 가까운 것
+    const dist1_1 = Math.min(
+      Math.abs(measured[1] - axis[0]),
+      Math.abs(measured[1] - axis[1]),
+      360 - Math.abs(measured[1] - axis[0]),
+      360 - Math.abs(measured[1] - axis[1])
+    );
+    
+    // 또는 반대로: axis[0]과 measured 중 가까운 것 + axis[1]과 measured 중 가까운 것
+    const dist2_0 = Math.min(
+      Math.abs(axis[0] - measured[0]),
+      Math.abs(axis[0] - measured[1]),
+      360 - Math.abs(axis[0] - measured[0]),
+      360 - Math.abs(axis[0] - measured[1])
+    );
+    
+    const dist2_1 = Math.min(
+      Math.abs(axis[1] - measured[0]),
+      Math.abs(axis[1] - measured[1]),
+      360 - Math.abs(axis[1] - measured[0]),
+      360 - Math.abs(axis[1] - measured[1])
+    );
+    
+    // 두 방식 중 작은 값 선택
+    distances[type] = Math.min(dist1_0 + dist1_1, dist2_0 + dist2_1);
+  });
+  
+  // 가장 거리가 가까운 CVD 유형 반환
+  let minType = 'protan';
+  let minDist = distances.protan;
+  
+  if (distances.deutan < minDist) {
+    minType = 'deutan';
+    minDist = distances.deutan;
+  }
+  if (distances.tritan < minDist) {
+    minType = 'tritan';
+  }
+  
+  return minType;
+}
 
-    drawGrid(ctx, baseRGB, diffRGB, currentQ.diffIndex);
-  }, [idx, currentQ]);
+// ============================
+// 메인 컴포넌트
+// ============================
 
-  // 타이머
-  useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => {
-      setRemaining((s) => {
-        if (s <= 1) {
-          clearInterval(t);
-          submitAnswer(null); // 시간초과
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, running]);
+export default function ColorCalibrator() {
+  const [stage, setStage] = useState("intro");
+  const [selectedPairs, setSelectedPairs] = useState([]);
+  const [finalPair, setFinalPair] = useState(null);
+  const [widthMeasurements, setWidthMeasurements] = useState([]);
 
-  // 클릭 -> 몇 번째 칸?
-  const handleCanvasClick = (e) => {
-    if (!running) return;
-    const cvs = canvasRef.current;
-    if (!cvs) return;
+  if (stage === "intro") {
+    // 저장된 프로파일 확인
+    const savedProfile = localStorage.getItem(STORAGE_KEY);
+    let profileData = null;
+    if (savedProfile) {
+      try {
+        profileData = JSON.parse(savedProfile);
+      } catch (e) {
+        // 파싱 실패시 무시
+      }
+    }
 
-    const rect = cvs.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    const scaleX = cvs.width / rect.width;
-    const scaleY = cvs.height / rect.height;
-    const canvasX = clickX * scaleX;
-    const canvasY = clickY * scaleY;
-
-    const size = Math.min(cvs.width, cvs.height);
-    const cell = size / 3;
-    const col = Math.floor(canvasX / cell);
-    const row = Math.floor(canvasY / cell);
-
-    if (col < 0 || col > 2 || row < 0 || row > 2) return;
-    const pickIndex = row*3 + col;
-
-    submitAnswer(pickIndex);
-  };
-
-  // 제출
-  const submitAnswer = (pickIndex) => {
-    const ms = Date.now() - startRef.current;
-    const correct = (pickIndex === currentQ.diffIndex);
-
-    const ansRecord = {
-      qid: currentQ.id,
-      axis: currentQ.axis,
-      difficulty: currentQ.difficulty,
-      palette: currentQ.palette,
-      diffIndex: currentQ.diffIndex,
-      pickIndex,
-      correct,
-      ms,
+    const typeLabels = {
+      protan: "적색약 (Protanomaly)",
+      deutan: "녹색약 (Deuteranomaly)",
+      tritan: "청색약 (Tritanomaly)"
     };
 
-    setAnswers(prev => [...prev, ansRecord]);
-
-    if (idx < total - 1) {
-      setIdx(i => i + 1);
-      setRemaining(SECONDS_PER_QUESTION);
-      startRef.current = Date.now();
-      setRunning(true);
-    } else {
-      setRunning(false);
-    }
-  };
-
-  // 리스타트(데모용: 그냥 새로고침)
-  const restart = () => {
-    window.location.reload();
-  };
-
-  // 업로드 페이지 이동
-  const goUpload = () => {
-    // 라우터를 안 쓴 환경에서도 동작하도록 단순 이동 처리
-    window.location.href = '/upload';
-  };
-
-  /* ===================== 결과 분석 =====================
-     - axis='a' (빨강-초록) hard 난이도 정확도
-     - axis='b' (파랑-노랑) hard 난이도 정확도
-     기준으로 경고 메시지 선택
-  */
-  const report = useMemo(() => {
-    if (!done) return null;
-
-    function getHardAcc(axisName) {
-      const subset = answers.filter(
-        a => a.axis === axisName && a.difficulty === 'hard'
-      );
-      if (subset.length === 0) return null;
-      const correctCnt = subset.filter(a=>a.correct).length;
-      return correctCnt / subset.length;
-    }
-
-    const accA = getHardAcc('a');     // 적/녹
-    const accB = getHardAcc('b');     // 청/황
-
-    function classifyAxis(acc) {
-      if (acc === null) return 'unknown';
-      if (acc < 0.4) return 'severe';
-      if (acc < 0.7) return 'mild';
-      return 'ok';
-    }
-
-    const classA = classifyAxis(accA);
-    const classB = classifyAxis(accB);
-
-    let headline = '정상입니다(색각 이상이 없습니다).';
-    let subNote =
-      '이 테스트는 의학적 진단이 아니며 참고용입니다. 실제 색각 이상 여부는 전문 검사를 통해 확인하셔야 합니다.';
-
-    const aProblem = (classA === 'severe' || classA === 'mild');
-    const bProblem = (classB === 'severe' || classB === 'mild');
-
-    if (aProblem && bProblem) {
-      headline = '광범위한 색각 이상(전색약)이 의심됩니다.';
-      subNote =
-        '여러 색 축(빨강-초록 및 파랑-노랑 계열)에서 미세한 색 차이 구분이 어렵게 나타났습니다. 전문 시력 검사를 권장합니다.';
-    } else if (aProblem) {
-      headline = '적색약/녹색약이 의심됩니다.';
-      subNote =
-        '빨강-초록 계열 색 차이를 미세하게 구분하는 능력이 낮게 측정되었습니다. 전문 시력 검사를 권장합니다.';
-    } else if (bProblem) {
-      headline = '청색약이 의심됩니다.';
-      subNote =
-        '파랑-노랑 계열 색 차이를 미세하게 구분하는 능력이 낮게 측정되었습니다. 전문 시력 검사를 권장합니다.';
-    }
-
-    return {
-      headline,
-      subNote,
-      accA,
-      accB,
-      answers,
-    };
-  }, [done, answers]);
-
-  /* ===================== 렌더 ===================== */
-
-  if (done && report) {
     return (
-      <div style={{ maxWidth: 760 }}>
-        <h2 style={{ fontSize:22, fontWeight:800, marginBottom:6 }}>
-          결과
-        </h2>
-
-        {/* 최종 한 줄 요약 박스 */}
-        <div style={{
-          padding:16,
-          border:'1px solid #2d7ef7',
-          borderRadius:10,
-          background:'rgba(45,126,247,0.06)'
-        }}>
-          <div style={{ fontSize:18, fontWeight:700, marginBottom:6 }}>
-            {report.headline}
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>색각 캘리브레이터</h1>
+          <p style={styles.subtitle}>개인 맞춤 색각 측정 도구</p>
+        </div>
+        
+        {profileData ? (
+          <div style={styles.savedProfileCard}>
+            <h3 style={styles.savedProfileTitle}>저장된 측정 결과</h3>
+            <div style={styles.savedProfileContent}>
+              <div style={styles.savedProfileRow}>
+                <span style={styles.savedProfileLabel}>유형</span>
+                <span style={styles.savedProfileValue}>{typeLabels[profileData.inferredType]}</span>
+              </div>
+              <div style={styles.savedProfileRow}>
+                <span style={styles.savedProfileLabel}>혼동 색상</span>
+                <span style={styles.savedProfileValue}>
+                  {profileData.confusionPair.hueA}° ↔ {profileData.confusionPair.hueB}°
+                </span>
+              </div>
+              <div style={styles.savedProfileRow}>
+                <span style={styles.savedProfileLabel}>혼동선 폭</span>
+                <span style={styles.savedProfileValue}>±{profileData.maxWidth}°</span>
+              </div>
+              <div style={styles.savedProfileRow}>
+                <span style={styles.savedProfileLabel}>측정 일시</span>
+                <span style={styles.savedProfileValue}>
+                  {new Date(profileData.timestamp).toLocaleString('ko-KR')}
+                </span>
+              </div>
+            </div>
           </div>
-          <div style={{ color:'#555', fontSize:14, lineHeight:1.4 }}>
-            {report.subNote}
+        ) : (
+          <div style={styles.noProfileCard}>
+            <p style={styles.noProfileText}>저장된 측정 결과가 없습니다</p>
           </div>
+        )}
+        
+        <div style={styles.infoCard}>
+          <h3 style={styles.infoTitle}>개인 맞춤 정밀 측정</h3>
+          <p style={styles.infoText}>
+            고정된 색상 쌍이 아닌, 당신이 실제로 혼동하는 색상을 직접 찾아냅니다.
+            3단계 점진적 좁히기로 정확한 혼동 색상 쌍을 특정합니다.
+          </p>
         </div>
 
-        {/* 버튼 영역 */}
-        <div style={{ display:'flex', gap:8, marginTop:16 }}>
-          <button onClick={restart} style={btn('#2d7ef7')}>
-            다시 시작
-          </button>
-          <button onClick={goUpload} style={btn('#10b981')}>
-            사진 업로드
-          </button>
+        <div style={styles.infoCard}>
+          <h3 style={styles.infoTitle}>수치화된 결과</h3>
+          <ul style={styles.infoList}>
+            <li>혼동 색상 쌍의 정확한 각도 (예: 40° ↔ 115°)</li>
+            <li>혼동선 폭 측정 (예: ±2° 범위)</li>
+            <li>심각도 수준 판정 (경도/중등도/중증)</li>
+            <li>측정된 데이터는 개인 맞춤 색상 보정 필터 제작에 사용 가능</li>
+          </ul>
         </div>
 
-        <p style={{ marginTop:20, fontSize:12, color:'#888', lineHeight:1.4 }}>
-          ※ 본 도구는 시험용 프로토타입입니다. 의료적 진단이 아닙니다.
+        <button style={styles.primaryButton} onClick={() => setStage("grid1")}>
+          {profileData ? "다시 측정하기" : "측정 시작하기"}
+        </button>
+
+        <p style={styles.note}>
+          소요시간: 약 3-5분
         </p>
       </div>
     );
   }
 
-  // 진행 중 화면
-  return (
-    <div style={{ maxWidth:760 }}>
-      <div style={{ display:'flex', alignItems:'baseline', gap:12 }}>
-        <h2 style={{ fontSize:22, fontWeight:800, margin:0 }}>
-          문항 #{idx+1} / {total}
-        </h2>
-        <span style={{ color:'#888' }}>남은 시간: {remaining}s</span>
-      </div>
-
-      <p style={{ marginTop:6, color:'#ccc', fontSize:14, lineHeight:1.4 }}>
-        3x3 격자 중 다른 색으로 보이는 칸을 직접 클릭하세요.
-      </p>
-
-      <canvas
-        ref={canvasRef}
-        width={360}
-        height={360}
-        onClick={handleCanvasClick}
-        style={{
-          width:360,
-          height:360,
-          borderRadius:8,
-          border:'1px solid #444',
-          display:'block',
-          background:'#111',
-          cursor:'pointer'
+  if (stage === "grid1") {
+    return (
+      <GridSelection
+        interval={45}
+        centerHueA={null}
+        centerHueB={null}
+        range={180}
+        title="1단계: 넓은 범위 탐색"
+        description="숫자 '5'가 가장 안 보이는 칸을 클릭하세요"
+        onSelect={(pair) => {
+          setSelectedPairs([pair]);
+          setStage("grid2");
         }}
       />
+    );
+  }
 
-      <div style={{ marginTop:16 }}>
+  if (stage === "grid2") {
+    const prevPair = selectedPairs[0];
+    return (
+      <GridSelection
+        interval={15}
+        centerHueA={prevPair.hueA}
+        centerHueB={prevPair.hueB}
+        range={90}
+        title="2단계: 중간 범위 탐색"
+        description="선택한 영역 주변을 더 세밀하게 탐색합니다"
+        onSelect={(pair) => {
+          setSelectedPairs([...selectedPairs, pair]);
+          setStage("grid3");
+        }}
+      />
+    );
+  }
+
+  if (stage === "grid3") {
+    const prevPair = selectedPairs[1];
+    return (
+      <GridSelection
+        interval={5}
+        centerHueA={prevPair.hueA}
+        centerHueB={prevPair.hueB}
+        range={30}
+        title="3단계: 정밀 탐색"
+        description="최종적으로 가장 구별이 안 되는 조합을 선택하세요"
+        onSelect={(pair) => {
+          setFinalPair(pair);
+          setStage("width");
+        }}
+      />
+    );
+  }
+
+  if (stage === "width") {
+    return (
+      <WidthMeasurement
+        pair={finalPair}
+        widthMeasurements={widthMeasurements}
+        setWidthMeasurements={setWidthMeasurements}
+        setStage={setStage}
+      />
+    );
+  }
+
+  if (stage === "result") {
+    return (
+      <Results
+        finalPair={finalPair}
+        widthMeasurements={widthMeasurements}
+        setStage={setStage}
+      />
+    );
+  }
+
+  return null;
+}
+
+// ============================
+// Grid Selection
+// ============================
+
+function GridSelection({ interval, centerHueA, centerHueB, range, title, description, onSelect }) {
+  const [currentPage, setCurrentPage] = useState(0);
+  const pairs = generateColorPairs(interval, centerHueA, centerHueB, range);
+  
+  const itemsPerPage = 4;
+  const totalPages = Math.ceil(pairs.length / itemsPerPage);
+  const currentPairs = pairs.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  
+  return (
+    <div style={styles.container}>
+      <h2 style={styles.title}>{title}</h2>
+      <p style={styles.desc}>{description}</p>
+      
+      <div style={styles.gridInfo}>
+        <span style={styles.gridCount}>
+          {currentPage * itemsPerPage + 1}~{Math.min((currentPage + 1) * itemsPerPage, pairs.length)} / 총 {pairs.length}개
+        </span>
+      </div>
+
+      <div style={styles.grid}>
+        {currentPairs.map((pair, idx) => (
+          <GridCell
+            key={currentPage * itemsPerPage + idx}
+            pair={pair}
+            onClick={() => onSelect(pair)}
+          />
+        ))}
+      </div>
+
+      <div style={styles.pagination}>
         <button
-          onClick={()=>submitAnswer(null)}
-          style={btn('#f59e0b')}
+          style={{...styles.paginationButton, opacity: currentPage === 0 ? 0.3 : 1}}
+          onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+          disabled={currentPage === 0}
         >
-          모르겠음 / 너무 비슷함
+          ← 이전
+        </button>
+        <span style={styles.pageIndicator}>
+          {currentPage + 1} / {totalPages}
+        </span>
+        <button
+          style={{...styles.paginationButton, opacity: currentPage === totalPages - 1 ? 0.3 : 1}}
+          onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+          disabled={currentPage === totalPages - 1}
+        >
+          다음 →
         </button>
       </div>
 
-      <div style={{ marginTop:12, color:'#666', fontSize:12, lineHeight:1.4 }}>
-        ※ 이 테스트는 의학적 진단용이 아니며, 결과는 참고용입니다.
+      <p style={styles.hint}>
+        💡 천천히 살펴보며 가장 구별이 안 되는 칸을 클릭하세요
+      </p>
+    </div>
+  );
+}
+
+// ============================
+// Grid Cell
+// ============================
+
+function GridCell({ pair, onClick }) {
+  const canvasRef = useRef(null);
+  const [dots] = useState(() => generateDots(300, 300, 2500));
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#f5f5f5";
+    ctx.fillRect(0, 0, 300, 300);
+
+    dots.forEach(dot => {
+      const isShape = isNumber5(dot.x, dot.y, 300, 300);
+      const [r, g, b] = isShape ? pair.colorB : pair.colorA;
+
+      ctx.beginPath();
+      ctx.arc(dot.x, dot.y, dot.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+      ctx.fill();
+    });
+  }, [dots, pair]);
+
+  return (
+    <button style={styles.gridCell} onClick={onClick}>
+      <canvas
+        ref={canvasRef}
+        width={300}
+        height={300}
+        style={styles.gridCanvas}
+      />
+      <div style={styles.cellInfo}>
+        <span style={styles.cellAngle}>{pair.hueA}° ↔ {pair.hueB}°</span>
+      </div>
+    </button>
+  );
+}
+
+// ============================
+// Width Measurement
+// ============================
+
+function WidthMeasurement({ pair, widthMeasurements, setWidthMeasurements, setStage }) {
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const offsets = [0, 1, -1, 2, -2, 3, -3, 5, -5, 8, -8];
+
+  return (
+    <SingleWidthTest
+      pair={pair}
+      offset={offsets[currentOffset]}
+      testNumber={currentOffset + 1}
+      totalTests={offsets.length}
+      onResult={(canDistinguish) => {
+        const newMeasurement = {
+          offset: offsets[currentOffset],
+          canDistinguish: canDistinguish
+        };
+
+        const newMeasurements = [...widthMeasurements, newMeasurement];
+        setWidthMeasurements(newMeasurements);
+
+        if (currentOffset < offsets.length - 1) {
+          setCurrentOffset(currentOffset + 1);
+        } else {
+          setStage("result");
+        }
+      }}
+    />
+  );
+}
+
+// ============================
+// Single Width Test
+// ============================
+
+function SingleWidthTest({ pair, offset, testNumber, totalTests, onResult }) {
+  const canvasRef = useRef(null);
+  const [showingColorA, setShowingColorA] = useState(true);
+  const [dots] = useState(() => generateDots(340, 340, 1800));
+
+  const testHueA = (pair.hueA + offset + 360) % 360;
+  const testHueB = (pair.hueB + offset + 360) % 360;
+
+  const colorA = hslToRgb(testHueA, pair.saturation, pair.lightness);
+  const colorB = hslToRgb(testHueB, pair.saturation, pair.lightness);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#f5f5f5";
+    ctx.fillRect(0, 0, 340, 340);
+
+    const bgColor = showingColorA ? colorA : colorB;
+    const fgColor = showingColorA ? colorB : colorA;
+
+    dots.forEach(dot => {
+      const isShape = isNumber5(dot.x, dot.y, 340, 340);
+      const [r, g, b] = isShape ? fgColor : bgColor;
+
+      ctx.beginPath();
+      ctx.arc(dot.x, dot.y, dot.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+      ctx.fill();
+    });
+  }, [showingColorA, dots, colorA, colorB]);
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.phaseIndicator}>
+        <span style={styles.phaseLabel}>4단계</span>
+        혼동선 폭 측정
+      </div>
+
+      <div style={styles.progressBar}>
+        <div style={{...styles.progressFill, width: `${(testNumber / totalTests) * 100}%`}} />
+      </div>
+      
+      <h2 style={styles.title}>
+        테스트 {testNumber}/{totalTests}
+      </h2>
+
+      <div style={styles.testInfo}>
+        <span style={styles.testLabel2}>
+          {offset > 0 ? '+' : ''}{offset}° 벗어남
+        </span>
+      </div>
+
+      <p style={styles.desc}>
+        이 두 색상을 <strong>구별할 수 있나요?</strong>
+      </p>
+
+      <div style={styles.canvasContainer}>
+        <canvas
+          ref={canvasRef}
+          width={340}
+          height={340}
+          style={styles.canvas}
+        />
+      </div>
+
+      <div style={styles.colorSwitcher}>
+        <button
+          style={{
+            ...styles.colorButton,
+            background: `rgb(${colorA.join(',')})`,
+            border: showingColorA ? '4px solid #4f46e5' : '2px solid #e5e7eb'
+          }}
+          onClick={() => setShowingColorA(true)}
+        >
+          색상 A
+        </button>
+        <button
+          style={{
+            ...styles.colorButton,
+            background: `rgb(${colorB.join(',')})`,
+            border: !showingColorA ? '4px solid #4f46e5' : '2px solid #e5e7eb'
+          }}
+          onClick={() => setShowingColorA(false)}
+        >
+          색상 B
+        </button>
+      </div>
+
+      <div style={styles.buttonGroup}>
+        <button
+          style={{...styles.primaryButton, flex: 1, background: '#10b981'}}
+          onClick={() => onResult(true)}
+        >
+          ✓ 구별 가능
+        </button>
+        <button
+          style={{...styles.primaryButton, flex: 1, background: '#ef4444'}}
+          onClick={() => onResult(false)}
+        >
+          ✗ 구별 불가
+        </button>
       </div>
     </div>
   );
 }
 
-/* ===================== 헬퍼 스타일 ===================== */
-function btn(bg){
-  return {
-    background:bg,
-    color:'#fff',
-    border:0,
-    padding:'9px 14px',
-    borderRadius:8,
-    cursor:'pointer',
-    fontSize:14,
-    lineHeight:1.2
+// ============================
+// Results
+// ============================
+
+function Results({ finalPair, widthMeasurements, setStage }) {
+  const confused = widthMeasurements.filter(m => !m.canDistinguish);
+  const maxWidth = confused.length > 0 
+    ? Math.max(...confused.map(m => Math.abs(m.offset)))
+    : 0;
+
+  const severityLabel = 
+    maxWidth === 0 ? "경도 (중심축만)" :
+    maxWidth <= 1 ? "경도" :
+    maxWidth <= 2 ? "경도-중등도" :
+    maxWidth <= 3 ? "중등도" :
+    maxWidth <= 5 ? "중등도-중증" : "중증";
+
+  const inferredType = inferCVDType(finalPair.hueA, finalPair.hueB);
+
+  const typeLabels = {
+    protan: "적색약 (Protanomaly)",
+    deutan: "녹색약 (Deuteranomaly)",
+    tritan: "청색약 (Tritanomaly)"
   };
+
+  const profile = {
+    inferredType: inferredType,
+    confusionPair: finalPair,
+    maxWidth: maxWidth,
+    severityLabel: severityLabel,
+    widthMeasurements: widthMeasurements,
+    timestamp: new Date().toISOString()
+  };
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  }, []);
+
+  return (
+    <div style={styles.container}>
+      <div style={{...styles.resultIcon, background: "#fef3c7", color: "#f59e0b"}}>
+        !
+      </div>
+      
+      <h2 style={styles.title}>측정 완료</h2>
+      
+      <div style={styles.resultCard}>
+        <div style={styles.resultRow}>
+          <span style={styles.resultLabel}>추론된 유형</span>
+          <span style={styles.resultValue}>{typeLabels[inferredType]}</span>
+        </div>
+        
+        <div style={styles.resultRow}>
+          <span style={styles.resultLabel}>혼동 색상 쌍</span>
+          <span style={styles.resultValue}>
+            {finalPair.hueA}° ↔ {finalPair.hueB}°
+          </span>
+        </div>
+
+        <div style={styles.resultRow}>
+          <span style={styles.resultLabel}>혼동선 폭</span>
+          <span style={styles.resultValue}>
+            ±{maxWidth}° 범위
+          </span>
+        </div>
+        
+        <div style={styles.resultRow}>
+          <span style={styles.resultLabel}>심각도</span>
+          <span style={styles.resultValue}>
+            {severityLabel}
+          </span>
+        </div>
+      </div>
+
+      <div style={styles.confusionDisplay}>
+        <h3 style={styles.sectionTitle}>발견된 혼동 색상</h3>
+        <div style={styles.pairColors}>
+          <div style={styles.colorBox}>
+            <div style={{
+              width: 80,
+              height: 80,
+              borderRadius: 12,
+              background: `rgb(${finalPair.colorA.join(',')})`,
+              border: '3px solid #fff',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }} />
+            <span style={styles.colorLabel}>{finalPair.hueA}°</span>
+          </div>
+          <span style={styles.vsLabel}>↔</span>
+          <div style={styles.colorBox}>
+            <div style={{
+              width: 80,
+              height: 80,
+              borderRadius: 12,
+              background: `rgb(${finalPair.colorB.join(',')})`,
+              border: '3px solid #fff',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }} />
+            <span style={styles.colorLabel}>{finalPair.hueB}°</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={styles.explanationCard}>
+        <h3 style={styles.sectionTitle}>📊 결과 해석</h3>
+        <p style={styles.explanationText}>
+          3단계 점진 탐색을 통해 당신의 정확한 혼동 색상 쌍을 발견했습니다.
+        </p>
+        <p style={styles.explanationText}>
+          측정 결과, <strong>{typeLabels[inferredType]}</strong>로 추론되며,
+          혼동 축에서 <strong>±{maxWidth}°</strong> 범위의 색상을 구별하기 어려워하는
+          <strong> {severityLabel}</strong> 수준입니다.
+        </p>
+      </div>
+
+      <div style={styles.buttonGroup}>
+        <button
+          style={{...styles.primaryButton, flex: 1}}
+          onClick={() => {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+            alert('측정 결과가 저장되었습니다.\n이제 이미지 변환 페이지에서 필터를 적용할 수 있습니다.');
+          }}
+        >
+          결과 저장
+        </button>
+        <button
+          style={{...styles.secondaryButton, flex: 1}}
+          onClick={() => {
+            setStage("intro");
+          }}
+        >
+          다시 측정
+        </button>
+      </div>
+    </div>
+  );
 }
+
+// ============================
+// Styles
+// ============================
+
+const styles = {
+  container: {
+    maxWidth: 900,
+    margin: "0 auto",
+    padding: "40px 20px",
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  },
+  header: {
+    textAlign: "center",
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 800,
+    color: "#111",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#6b7280",
+  },
+  desc: {
+    fontSize: 15,
+    color: "#4b5563",
+    textAlign: "center",
+    lineHeight: 1.6,
+    marginBottom: 30,
+  },
+  infoCard: {
+    background: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: 700,
+    marginBottom: 12,
+    color: "#111",
+  },
+  infoText: {
+    fontSize: 15,
+    color: "#4b5563",
+    lineHeight: 1.7,
+    margin: 0,
+  },
+  infoList: {
+    margin: 0,
+    paddingLeft: 20,
+    color: "#4b5563",
+    lineHeight: 1.8,
+    fontSize: 15,
+  },
+  savedProfileCard: {
+    background: "#eff6ff",
+    border: "2px solid #3b82f6",
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 30,
+  },
+  savedProfileTitle: {
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#1e40af",
+    marginBottom: 16,
+    margin: 0,
+  },
+  savedProfileContent: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  savedProfileRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    background: "#fff",
+    borderRadius: 8,
+  },
+  savedProfileLabel: {
+    fontSize: 14,
+    color: "#6b7280",
+  },
+  savedProfileValue: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#111",
+  },
+  noProfileCard: {
+    background: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 30,
+    textAlign: "center",
+  },
+  noProfileText: {
+    fontSize: 15,
+    color: "#9ca3af",
+    margin: 0,
+  },
+  exampleCard: {
+    background: "#eff6ff",
+    border: "1px solid #dbeafe",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 30,
+  },
+  exampleTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#1e40af",
+    margin: "0 0 8px 0",
+  },
+  exampleText: {
+    fontSize: 14,
+    color: "#1e40af",
+    lineHeight: 1.8,
+    margin: 0,
+  },
+  primaryButton: {
+    width: "100%",
+    padding: "16px",
+    background: "#4f46e5",
+    color: "#fff",
+    border: "none",
+    borderRadius: 12,
+    fontSize: 16,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  secondaryButton: {
+    width: "100%",
+    padding: "14px",
+    background: "#fff",
+    color: "#4b5563",
+    border: "2px solid #e5e7eb",
+    borderRadius: 12,
+    fontSize: 15,
+    fontWeight: 500,
+    cursor: "pointer",
+    marginTop: 12,
+  },
+  note: {
+    textAlign: "center",
+    fontSize: 13,
+    color: "#9ca3af",
+    marginTop: 20,
+  },
+  gridInfo: {
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  gridCount: {
+    display: "inline-block",
+    padding: "8px 16px",
+    background: "#f3f4f6",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#374151",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: 20,
+    marginBottom: 30,
+    maxWidth: 700,
+    margin: "0 auto 30px",
+  },
+  gridCell: {
+    background: "#fff",
+    border: "3px solid #e5e7eb",
+    borderRadius: 16,
+    padding: 12,
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  gridCanvas: {
+    width: "100%",
+    height: "auto",
+    borderRadius: 12,
+    display: "block",
+  },
+  cellInfo: {
+    marginTop: 12,
+    textAlign: "center",
+  },
+  cellAngle: {
+    fontSize: 13,
+    color: "#6b7280",
+    fontWeight: 600,
+  },
+  pagination: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 20,
+    marginBottom: 20,
+  },
+  paginationButton: {
+    padding: "12px 24px",
+    background: "#fff",
+    color: "#4f46e5",
+    border: "2px solid #4f46e5",
+    borderRadius: 10,
+    fontSize: 15,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  pageIndicator: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#374151",
+    minWidth: 80,
+    textAlign: "center",
+  },
+  hint: {
+    textAlign: "center",
+    fontSize: 13,
+    color: "#9ca3af",
+    fontStyle: "italic",
+  },
+  phaseIndicator: {
+    textAlign: "center",
+    padding: "12px",
+    background: "#eff6ff",
+    borderRadius: 8,
+    marginBottom: 20,
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#1e40af",
+  },
+  phaseLabel: {
+    display: "inline-block",
+    padding: "4px 12px",
+    background: "#3b82f6",
+    color: "#fff",
+    borderRadius: 6,
+    fontSize: 13,
+    marginRight: 8,
+  },
+  progressBar: {
+    width: "100%",
+    height: 8,
+    background: "#e5e7eb",
+    borderRadius: 4,
+    marginBottom: 30,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    background: "linear-gradient(90deg, #4f46e5, #7c3aed)",
+    transition: "width 0.3s ease",
+  },
+  testInfo: {
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  testLabel2: {
+    display: "inline-block",
+    padding: "8px 16px",
+    background: "#f3f4f6",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#374151",
+  },
+  canvasContainer: {
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: 30,
+  },
+  canvas: {
+    borderRadius: 16,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+    border: "4px solid #fff",
+    maxWidth: "100%",
+    height: "auto",
+  },
+  colorSwitcher: {
+    display: "flex",
+    gap: 12,
+    marginBottom: 30,
+  },
+  colorButton: {
+    flex: 1,
+    padding: "20px",
+    borderRadius: 12,
+    fontSize: 16,
+    fontWeight: 600,
+    color: "#fff",
+    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  buttonGroup: {
+    display: "flex",
+    gap: 12,
+    marginBottom: 20,
+  },
+  resultIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: "50%",
+    background: "#dbeafe",
+    color: "#3b82f6",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 40,
+    fontWeight: 800,
+    margin: "0 auto 20px",
+  },
+  resultCard: {
+    background: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
+  },
+  resultRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottom: "1px solid #e5e7eb",
+  },
+  resultLabel: {
+    fontSize: 15,
+    color: "#6b7280",
+  },
+  resultValue: {
+    fontSize: 16,
+    fontWeight: 600,
+    color: "#111",
+    textAlign: "right",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#111",
+    marginBottom: 16,
+  },
+  confusionDisplay: {
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    padding: 24,
+    marginBottom: 20,
+  },
+  pairColors: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 24,
+  },
+  colorBox: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+  },
+  colorLabel: {
+    fontSize: 14,
+    color: "#6b7280",
+    fontWeight: 600,
+  },
+  vsLabel: {
+    fontSize: 24,
+    color: "#9ca3af",
+    fontWeight: 600,
+  },
+  explanationCard: {
+    background: "#eff6ff",
+    border: "1px solid #dbeafe",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+  },
+  explanationText: {
+    fontSize: 14,
+    color: "#1e40af",
+    lineHeight: 1.6,
+    margin: "0 0 12px 0",
+  },
+};

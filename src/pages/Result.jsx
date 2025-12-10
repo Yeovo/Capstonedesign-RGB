@@ -4,6 +4,7 @@ import xkcdColors from '../assets/xkcd_color.json';
 
 /* ---------- localStorage 키 ---------- */
 const STORAGE_KEY = 'colorPalettes_v1';
+const CVD_PROFILE_KEY = 'colorVisionProfile_v6';
 
 /* ---------- 색상 유틸 ---------- */
 const rgb2xyz = (r, g, b) => {
@@ -14,6 +15,7 @@ const rgb2xyz = (r, g, b) => {
   const Z = R * 0.0193339 + G * 0.1191920 + B * 0.9503041;
   return [X, Y, Z];
 };
+
 const xyz2lab = (X, Y, Z) => {
   const ref = [0.95047, 1, 1.08883];
   const f = t => t > Math.pow(6 / 29, 3) ? Math.cbrt(t) : (t * (29 / 6) * (29 / 6) / 3 + 4 / 29);
@@ -21,17 +23,67 @@ const xyz2lab = (X, Y, Z) => {
   const fx = f(xr), fy = f(yr), fz = f(zr);
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 };
+
 const rgb2lab = (r, g, b) => xyz2lab(...rgb2xyz(r, g, b));
+
 const labDist = (L1, a1, b1, L2, a2, b2) => {
   const dL = L1 - L2, da = a1 - a2, db = b1 - b2;
   return Math.sqrt(dL * dL + da * da + db * db);
 };
+
 const hex2rgb = (hex) => {
   const h = hex.replace('#', '');
   return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 };
+
 const rgb2hex = (r, g, b) =>
-  '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+  '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase();
+
+/* ---------- RGB ↔ HSL 변환 ---------- */
+const rgb2hsl = (r, g, b) => {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  
+  if (max === min) return [0, 0, l];
+  
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  
+  let h;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  
+  return [h * 360, s, l];
+};
+
+const hsl2rgb = (h, s, l) => {
+  h = h / 360;
+  const hue2rgb = (p, q, t) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1/6) return p + (q - p) * 6 * t;
+    if (t < 1/2) return q;
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+  };
+  
+  if (s === 0) {
+    const gray = l * 255;
+    return [gray, gray, gray];
+  }
+  
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  
+  return [
+    hue2rgb(p, q, h + 1/3) * 255,
+    hue2rgb(p, q, h) * 255,
+    hue2rgb(p, q, h - 1/3) * 255
+  ];
+};
 
 /* ---------- XKCD 색상 이름 찾기 ---------- */
 const nearestXKCDName = (rgb) => {
@@ -125,7 +177,7 @@ const extractPalette = async (imgUrl, clusters = 5, sampleSize = 200 * 200, iter
     .sort((a, b) => b.pct - a.pct);
 };
 
-/* ---------- 색약 필터 ---------- */
+/* ---------- 색약 필터 (기존) ---------- */
 const applyFilter = (r, g, b, mode) => {
   if (mode === 'none') return [r, g, b];
   if (mode === 'protan') return [
@@ -146,16 +198,129 @@ const applyFilter = (r, g, b, mode) => {
   return [r, g, b];
 };
 
+/* ---------- CVD 필터 (개인 맞춤) ---------- */
+const applyCVDFilter = (r, g, b, cvdProfile) => {
+  if (!cvdProfile || !cvdProfile.confusionPair) return [r, g, b];
+  
+  const [h, s, l] = rgb2hsl(r, g, b);
+  
+  // 채도/명도가 너무 낮으면 건너뛰기
+  if (s < 0.08 || l < 0.05 || l > 0.95) {
+    return [r, g, b];
+  }
+  
+  const { hueA, hueB } = cvdProfile.confusionPair;
+  
+  // ✅ 혼동 축 주변 넓은 영역 (±40°)
+  const rangeA = 40;
+  const rangeB = 40;
+  
+  // hueA 주변 (빨강~주황 영역)
+  let inZoneA = false;
+  let distFromZoneA = 999;
+  
+  // 순환 거리 계산
+  const distToA = Math.min(
+    Math.abs(h - hueA),
+    Math.abs(h - hueA + 360),
+    Math.abs(h - hueA - 360)
+  );
+  
+  if (distToA <= rangeA) {
+    inZoneA = true;
+    distFromZoneA = distToA;
+  }
+  
+  // hueB 주변 (초록~황록 영역)  
+  let inZoneB = false;
+  let distFromZoneB = 999;
+  
+  const distToB = Math.min(
+    Math.abs(h - hueB),
+    Math.abs(h - hueB + 360),
+    Math.abs(h - hueB - 360)
+  );
+  
+  if (distToB <= rangeB) {
+    inZoneB = true;
+    distFromZoneB = distToB;
+  }
+  
+  if (!inZoneA && !inZoneB) {
+    return [r, g, b]; // 혼동 영역 밖
+  }
+  
+  // ✅ hue 이동: 거리에 비례해서 점진적으로
+  let newH = h;
+  
+  if (inZoneA && inZoneB) {
+    // 두 영역 사이 (매우 혼동되는 영역)
+    // 가까운 쪽으로 강하게 이동
+    if (distFromZoneA < distFromZoneB) {
+      // A 쪽으로
+      const direction = h < hueA ? -1 : 1;
+      newH = h + direction * 50; // 큰 shift
+    } else {
+      // B 쪽으로
+      const direction = h < hueB ? -1 : 1;
+      newH = h + direction * 50;
+    }
+  } else if (inZoneA) {
+    // A 영역만 (빨강 계열)
+    // A 중심에서 멀어지는 방향으로
+    const direction = h < hueA ? -1 : 1;
+    const intensity = 1 - (distFromZoneA / rangeA); // 중심에 가까울수록 강하게
+    newH = h + direction * 40 * intensity;
+  } else if (inZoneB) {
+    // B 영역만 (초록 계열)
+    const direction = h < hueB ? -1 : 1;
+    const intensity = 1 - (distFromZoneB / rangeB);
+    newH = h + direction * 40 * intensity;
+  }
+  
+  // 360도 순환
+  while (newH < 0) newH += 360;
+  while (newH >= 360) newH -= 360;
+  
+  const [newR, newG, newB] = hsl2rgb(newH, s, l);
+  
+  if (isNaN(newR) || isNaN(newG) || isNaN(newB)) {
+    return [r, g, b];
+  }
+  
+  return [
+    Math.max(0, Math.min(255, newR)),
+    Math.max(0, Math.min(255, newG)),
+    Math.max(0, Math.min(255, newB))
+  ];
+};
+
 /* ---------- 메인 Result ---------- */
 export default function Result() {
   const location = useLocation();
   const navigate = useNavigate();
   const { imageUrl } = location.state || {};
   const canvasRef = useRef(null);
+  
   const [palette, setPalette] = useState([]);
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [outlineMode, setOutlineMode] = useState(false);
   const [filterMode, setFilterMode] = useState('none');
+  const [cvdFilterEnabled, setCvdFilterEnabled] = useState(false);
+  const [cvdProfile, setCvdProfile] = useState(null);
+
+  // CVD 프로파일 로드
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CVD_PROFILE_KEY);
+      if (raw) {
+        const profile = JSON.parse(raw);
+        setCvdProfile(profile);
+      }
+    } catch (e) {
+      console.error('CVD 프로파일 로드 실패:', e);
+    }
+  }, []);
 
   if (!imageUrl) {
     return (
@@ -176,9 +341,10 @@ export default function Result() {
     return () => { mounted = false; };
   }, [imageUrl]);
 
-  // 캔버스 그리기
+  // 캔버스 그리기 (클러스터 + 필터)
   useEffect(() => {
     if (!canvasRef.current || !palette.length) return;
+    
     (async () => {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
@@ -212,18 +378,28 @@ export default function Result() {
         clusterMap[i / 4] = minIdx;
       }
 
-      // 2) 필터 및 강조 적용
+      // 2) 필터 적용
       for (let i = 0; i < d.length; i += 4) {
         let r = d[i], g = d[i + 1], b = d[i + 2];
+        
+        // 기존 색약 시뮬레이션 필터
         [r, g, b] = applyFilter(r, g, b, filterMode);
+        
+        // 개인 맞춤 CVD 필터
+        if (cvdFilterEnabled && cvdProfile) {
+          [r, g, b] = applyCVDFilter(r, g, b, cvdProfile);
+        }
 
+        // 선택된 색상 강조
         const clusterIdx = clusterMap[i / 4];
         if (selectedIdx !== null && clusterIdx !== selectedIdx) {
           const gray = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
           r = g = b = gray;
         }
 
-        d[i] = r; d[i + 1] = g; d[i + 2] = b;
+        d[i] = Math.max(0, Math.min(255, Math.round(r)));
+        d[i + 1] = Math.max(0, Math.min(255, Math.round(g)));
+        d[i + 2] = Math.max(0, Math.min(255, Math.round(b)));
       }
 
       // 3) 외곽선 강조
@@ -252,7 +428,7 @@ export default function Result() {
 
       ctx.putImageData(imgData, 0, 0);
     })();
-  }, [imageUrl, palette, selectedIdx, outlineMode, filterMode]);
+  }, [imageUrl, palette, selectedIdx, outlineMode, filterMode, cvdFilterEnabled, cvdProfile]);
 
   /* ---------- 팔레트 저장 ---------- */
   const handleSavePalette = () => {
@@ -268,24 +444,27 @@ export default function Result() {
       const entry = {
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
-        name: '',          // 사용자가 나중에 이름 바꿀 수 있음
+        name: '',
         colors: palette.map(p => ({
           hex: p.hex,
           name: p.name,
           pct: p.pct,
         })),
-        // aiTags는 SavedPalettes에서 자동 생성
       };
 
       const next = [entry, ...prev];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-
-      // ✅ 저장 후 바로 /palettes로 이동
       navigate('/palettes');
     } catch (e) {
       console.error(e);
       alert('팔레트 저장 중 오류가 발생했습니다.');
     }
+  };
+
+  const typeLabels = {
+    protan: "적색약",
+    deutan: "녹색약",
+    tritan: "청색약"
   };
 
   return (
@@ -317,10 +496,60 @@ export default function Result() {
         </button>
       </div>
 
+      {/* CVD 프로파일 정보 */}
+      {cvdProfile && (
+        <div style={{ 
+          marginBottom: 12, 
+          padding: 12, 
+          background: '#eff6ff',
+          border: '1px solid #3b82f6',
+          borderRadius: 8 
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <strong style={{ color: '#1e40af' }}>측정된 색각 프로파일:</strong>
+              <span style={{ marginLeft: 8, color: '#4b5563' }}>
+                {typeLabels[cvdProfile.inferredType] || cvdProfile.inferredType}
+                {' '}(혼동: {cvdProfile.confusionPair?.hueA}° ↔ {cvdProfile.confusionPair?.hueB}°)
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>개인 맞춤 필터</span>
+              <label style={{ position: 'relative', width: 50, height: 26, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={cvdFilterEnabled}
+                  onChange={() => setCvdFilterEnabled(v => !v)}
+                  style={{ display: 'none' }}
+                />
+                <span style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  background: cvdFilterEnabled ? '#2d7ef7' : '#ccc',
+                  borderRadius: 26,
+                  transition: '0.3s',
+                }} />
+                <span style={{
+                  position: 'absolute',
+                  top: 2,
+                  left: cvdFilterEnabled ? 24 : 2,
+                  width: 22,
+                  height: 22,
+                  background: '#fff',
+                  borderRadius: '50%',
+                  transition: '0.3s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }} />
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 필터 / 외곽선 토글 */}
       <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-          <strong>필터:</strong>
+          <strong>시뮬레이션:</strong>
           {['none', 'protan', 'deutan', 'tritan'].map(m => (
             <button
               key={m}
