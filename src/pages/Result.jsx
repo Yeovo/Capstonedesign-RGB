@@ -8,7 +8,10 @@ const CVD_PROFILE_KEY = 'colorVisionProfile_v6';
 
 /* ---------- 색상 유틸 ---------- */
 const rgb2xyz = (r, g, b) => {
-  const srgb = [r, g, b].map(v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) });
+  const srgb = [r, g, b].map(v => {
+    v /= 255;
+    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
   const [R, G, B] = srgb;
   const X = R * 0.4124564 + G * 0.3575761 + B * 0.1804375;
   const Y = R * 0.2126729 + G * 0.7151522 + B * 0.0721750;
@@ -18,22 +21,33 @@ const rgb2xyz = (r, g, b) => {
 
 const xyz2lab = (X, Y, Z) => {
   const ref = [0.95047, 1, 1.08883];
-  const f = t => t > Math.pow(6 / 29, 3) ? Math.cbrt(t) : (t * (29 / 6) * (29 / 6) / 3 + 4 / 29);
+  const f = t =>
+    t > Math.pow(6 / 29, 3)
+      ? Math.cbrt(t)
+      : (t * (29 / 6) * (29 / 6) / 3 + 4 / 29);
   const [xr, yr, zr] = [X / ref[0], Y / ref[1], Z / ref[2]];
-  const fx = f(xr), fy = f(yr), fz = f(zr);
+  const fx = f(xr),
+    fy = f(yr),
+    fz = f(zr);
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 };
 
 const rgb2lab = (r, g, b) => xyz2lab(...rgb2xyz(r, g, b));
 
 const labDist = (L1, a1, b1, L2, a2, b2) => {
-  const dL = L1 - L2, da = a1 - a2, db = b1 - b2;
+  const dL = L1 - L2,
+    da = a1 - a2,
+    db = b1 - b2;
   return Math.sqrt(dL * dL + da * da + db * db);
 };
 
 const hex2rgb = (hex) => {
   const h = hex.replace('#', '');
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
 };
 
 const rgb2hex = (r, g, b) =>
@@ -86,62 +100,74 @@ const hsl2rgb = (h, s, l) => {
 };
 
 /* ---------- XKCD 색상 이름 찾기 ---------- */
-const nearestXKCDName = (rgb) => {
+const nearestXKCDName = rgb => {
   const lab = rgb2lab(...rgb);
   let best = { name: null, d: Infinity };
   for (const c of xkcdColors) {
     const cRgb = hex2rgb(c.code);
     const d = labDist(...lab, ...rgb2lab(...cRgb));
-    if (d < best.d) { best = { name: c.english, d }; }
+    if (d < best.d) {
+      best = { name: c.english, d };
+    }
   }
   return best.name;
 };
 
-/* ---------- K-means 팔레트 추출 ---------- */
-const extractPalette = async (imgUrl, clusters = 5, sampleSize = 200 * 200, iterations = 10) => {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  const img = await new Promise((res, rej) => {
-    const i = new Image(); i.crossOrigin = 'anonymous';
-    i.onload = () => res(i); i.onerror = rej; i.src = imgUrl;
-  });
-  const ratio = img.width > 320 ? 320 / img.width : 1;
-  const w = Math.max(1, Math.round(img.width * ratio));
-  const h = Math.max(1, Math.round(img.height * ratio));
-  canvas.width = w; canvas.height = h;
-  ctx.drawImage(img, 0, 0, w, h);
-  const { data } = ctx.getImageData(0, 0, w, h);
-  const pixels = [];
-  const step = Math.max(1, Math.floor((w * h) / sampleSize));
-  for (let i = 0; i < w * h; i += step) {
-    const o = i * 4;
-    const r = data[o], g = data[o + 1], b = data[o + 2], a = data[o + 3];
-    if (a < 128) continue;
-    pixels.push([r, g, b]);
+/* ---------- K-means 1회 실행 ---------- */
+const runKMeans = (pixels, k, iterations = 8) => {
+  if (!pixels.length || k <= 0) {
+    return { centers: [], counts: [], sse: 0 };
   }
-  if (!pixels.length) return [];
 
+  // 초기 중심 무작위 선택
   const centers = [];
-  for (let c = 0; c < clusters; c++) {
+  for (let c = 0; c < k; c++) {
     centers.push(pixels[Math.floor(Math.random() * pixels.length)].slice());
   }
 
+  const assignments = new Array(pixels.length);
+  let sse = 0;
+
   for (let it = 0; it < iterations; it++) {
-    const sums = Array.from({ length: clusters }, () => [0, 0, 0, 0]);
-    for (const p of pixels) {
-      let bi = 0, bd = Infinity;
-      for (let c = 0; c < clusters; c++) {
+    sse = 0;
+
+    // 1) 각 픽셀을 가장 가까운 중심에 할당
+    for (let i = 0; i < pixels.length; i++) {
+      const p = pixels[i];
+      let bi = 0;
+      let bd = Infinity;
+
+      for (let c = 0; c < k; c++) {
         const dr = p[0] - centers[c][0];
         const dg = p[1] - centers[c][1];
         const db = p[2] - centers[c][2];
         const d = dr * dr + dg * dg + db * db;
-        if (d < bd) { bd = d; bi = c; }
+        if (d < bd) {
+          bd = d;
+          bi = c;
+        }
       }
-      const s = sums[bi];
-      s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; s[3]++;
+
+      assignments[i] = bi;
+      sse += bd; // SSE 누적
     }
-    for (let c = 0; c < clusters; c++) {
+
+    // 2) 각 클러스터 중심 재계산
+    const sums = Array.from({ length: k }, () => [0, 0, 0, 0]); // [r, g, b, count]
+
+    for (let i = 0; i < pixels.length; i++) {
+      const p = pixels[i];
+      const ci = assignments[i];
+      const s = sums[ci];
+      s[0] += p[0];
+      s[1] += p[1];
+      s[2] += p[2];
+      s[3] += 1;
+    }
+
+    for (let c = 0; c < k; c++) {
       if (sums[c][3] === 0) {
+        // 빈 클러스터는 랜덤 픽셀로 재초기화
         centers[c] = pixels[Math.floor(Math.random() * pixels.length)].slice();
       } else {
         centers[c] = [
@@ -153,26 +179,175 @@ const extractPalette = async (imgUrl, clusters = 5, sampleSize = 200 * 200, iter
     }
   }
 
-  const counts = Array(clusters).fill(0);
-  for (const p of pixels) {
-    let bi = 0, bd = Infinity;
-    for (let c = 0; c < clusters; c++) {
-      const dr = p[0] - centers[c][0];
-      const dg = p[1] - centers[c][1];
-      const db = p[2] - centers[c][2];
-      const d = dr * dr + dg * dg + db * db;
-      if (d < bd) { bd = d; bi = c; }
-    }
-    counts[bi]++;
+  // 마지막 assignments 기준으로 각 클러스터 픽셀 수 세기
+  const counts = Array(k).fill(0);
+  for (let i = 0; i < assignments.length; i++) {
+    counts[assignments[i]]++;
   }
-  const total = counts.reduce((a, b) => a + b, 0);
 
-  return centers
-    .map((rgb, i) => ({
-      rgb,
-      hex: rgb2hex(...rgb),
-      pct: total ? (counts[i] / total * 100) : 0,
-      name: nearestXKCDName(rgb),
+  return { centers, counts, sse };
+};
+
+/* ---------- Elbow Method로 최적 K 선택 ---------- */
+const chooseBestKByElbow = results => {
+  if (results.length === 0) return null;
+  if (results.length === 1) return results[0].k;
+
+  const ks = results.map(r => r.k);
+  const sses = results.map(r => r.sse);
+
+  const k1 = ks[0];
+  const kN = ks[ks.length - 1];
+  const s1 = sses[0];
+  const sN = sses[sses.length - 1];
+
+  const denom = Math.hypot(kN - k1, sN - s1) || 1;
+
+  let bestIdx = 0;
+  let bestDist = -1;
+
+  // 양 끝점 제외, 중간 점들에서 선과의 거리 최대인 지점 = 팔꿈치
+  for (let i = 1; i < ks.length - 1; i++) {
+    const k = ks[i];
+    const s = sses[i];
+    const num =
+      Math.abs((sN - s1) * k - (kN - k1) * s + kN * s1 - sN * k1);
+    const dist = num / denom;
+    if (dist > bestDist) {
+      bestDist = dist;
+      bestIdx = i;
+    }
+  }
+
+  return ks[bestIdx];
+};
+
+/* ---------- 비슷한 색 병합 (Lab 거리 기준) ---------- */
+const mergePalette = (centers, counts, threshold = 4) => {
+  const merged = [];
+
+  for (let i = 0; i < centers.length; i++) {
+    const rgb = centers[i];
+    const count = counts[i];
+    const lab = rgb2lab(...rgb);
+
+    let target = null;
+    let targetIdx = -1;
+
+    for (let j = 0; j < merged.length; j++) {
+      const m = merged[j];
+      const d = labDist(...lab, ...m.lab);
+      if (d < threshold) {
+        target = m;
+        targetIdx = j;
+        break;
+      }
+    }
+
+    if (!target) {
+      merged.push({
+        rgb: rgb.slice(),
+        lab: lab.slice(),
+        count,
+      });
+    } else {
+      const total = target.count + count;
+
+      // 가중 평균으로 중심 재계산
+      const newRgb = [
+        Math.round((target.rgb[0] * target.count + rgb[0] * count) / total),
+        Math.round((target.rgb[1] * target.count + rgb[1] * count) / total),
+        Math.round((target.rgb[2] * target.count + rgb[2] * count) / total),
+      ];
+      const newLab = [
+        (target.lab[0] * target.count + lab[0] * count) / total,
+        (target.lab[1] * target.count + lab[1] * count) / total,
+        (target.lab[2] * target.count + lab[2] * count) / total,
+      ];
+
+      merged[targetIdx] = {
+        rgb: newRgb,
+        lab: newLab,
+        count: total,
+      };
+    }
+  }
+
+  return merged;
+};
+
+/* ---------- K-means 팔레트 추출 (Elbow + 병합) ---------- */
+const extractPalette = async (
+  imgUrl,
+  clusters = 'auto',
+  sampleSize = 200 * 200,
+  iterations = 8
+) => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.crossOrigin = 'anonymous';
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = imgUrl;
+  });
+
+  const ratio = img.width > 320 ? 320 / img.width : 1;
+  const w = Math.max(1, Math.round(img.width * ratio));
+  const h = Math.max(1, Math.round(img.height * ratio));
+  canvas.width = w;
+  canvas.height = h;
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const { data } = ctx.getImageData(0, 0, w, h);
+  const pixels = [];
+  const step = Math.max(1, Math.floor((w * h) / sampleSize));
+
+  for (let i = 0; i < w * h; i += step) {
+    const o = i * 4;
+    const r = data[o],
+      g = data[o + 1],
+      b = data[o + 2],
+      a = data[o + 3];
+    if (a < 128) continue;
+    pixels.push([r, g, b]);
+  }
+
+  if (!pixels.length) return [];
+
+  let chosen;
+
+  if (clusters === 'auto') {
+    // 너무 많은 K는 비슷한 색만 늘어나므로 3~8 정도로 제한
+    const candidateKs = [3, 4, 5, 6, 7, 8];
+    const results = [];
+
+    for (const k of candidateKs) {
+      const r = runKMeans(pixels, k, iterations);
+      results.push({ k, ...r });
+    }
+
+    const bestK = chooseBestKByElbow(results) ?? candidateKs[0];
+    chosen = results.find(r => r.k === bestK) || results[0];
+  } else {
+    const k = typeof clusters === 'number' ? clusters : 5;
+    const r = runKMeans(pixels, k, iterations);
+    chosen = { k, ...r };
+  }
+
+  const { centers, counts } = chosen;
+
+  // Lab 거리 기준으로 비슷한 색 병합
+  const merged = mergePalette(centers, counts, 6);
+  const total = merged.reduce((acc, m) => acc + m.count, 0) || 1;
+
+  return merged
+    .map(m => ({
+      rgb: m.rgb,
+      hex: rgb2hex(...m.rgb),
+      pct: (m.count / total) * 100,
+      name: nearestXKCDName(m.rgb),
     }))
     .sort((a, b) => b.pct - a.pct);
 };
@@ -180,21 +355,24 @@ const extractPalette = async (imgUrl, clusters = 5, sampleSize = 200 * 200, iter
 /* ---------- 색약 필터 (기존) ---------- */
 const applyFilter = (r, g, b, mode) => {
   if (mode === 'none') return [r, g, b];
-  if (mode === 'protan') return [
-    r * 0.566 + g * 0.433 + b * 0,
-    r * 0.558 + g * 0.442 + b * 0,
-    r * 0 + g * 0.242 + b * 0.758
-  ];
-  if (mode === 'deutan') return [
-    r * 0.625 + g * 0.375 + b * 0,
-    r * 0.7 + g * 0.3 + b * 0,
-    r * 0 + g * 0.3 + b * 0.7
-  ];
-  if (mode === 'tritan') return [
-    r * 0.95 + g * 0.05 + b * 0,
-    r * 0 + g * 0.433 + b * 0.567,
-    r * 0 + g * 0.475 + b * 0.525
-  ];
+  if (mode === 'protan')
+    return [
+      r * 0.566 + g * 0.433 + b * 0,
+      r * 0.558 + g * 0.442 + b * 0,
+      r * 0 + g * 0.242 + b * 0.758,
+    ];
+  if (mode === 'deutan')
+    return [
+      r * 0.625 + g * 0.375 + b * 0,
+      r * 0.7 + g * 0.3 + b * 0,
+      r * 0 + g * 0.3 + b * 0.7,
+    ];
+  if (mode === 'tritan')
+    return [
+      r * 0.95 + g * 0.05 + b * 0,
+      r * 0 + g * 0.433 + b * 0.567,
+      r * 0 + g * 0.475 + b * 0.525,
+    ];
   return [r, g, b];
 };
 
@@ -331,14 +509,16 @@ export default function Result() {
     );
   }
 
-  // 팔레트 추출
+  // 팔레트 추출 (K 자동 선택 + 병합)
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const pal = await extractPalette(imageUrl, 5);
+      const pal = await extractPalette(imageUrl, 'auto');
       if (mounted) setPalette(pal);
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [imageUrl]);
 
   // 캔버스 그리기 (클러스터 + 필터)
@@ -349,15 +529,19 @@ export default function Result() {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       const img = await new Promise((res, rej) => {
-        const i = new Image(); i.crossOrigin = 'anonymous';
-        i.onload = () => res(i); i.onerror = rej; i.src = imageUrl;
+        const i = new Image();
+        i.crossOrigin = 'anonymous';
+        i.onload = () => res(i);
+        i.onerror = rej;
+        i.src = imageUrl;
       });
 
       const maxW = 1440;
       const ratio = img.width > maxW ? maxW / img.width : 1;
       const w = Math.round(img.width * ratio);
       const h = Math.round(img.height * ratio);
-      canvas.width = w; canvas.height = h;
+      canvas.width = w;
+      canvas.height = h;
 
       ctx.drawImage(img, 0, 0, w, h);
       const imgData = ctx.getImageData(0, 0, w, h);
@@ -368,12 +552,18 @@ export default function Result() {
 
       // 1) clusterMap 계산
       for (let i = 0; i < d.length; i += 4) {
-        const r0 = d[i], g0 = d[i + 1], b0 = d[i + 2];
+        const r0 = d[i],
+          g0 = d[i + 1],
+          b0 = d[i + 2];
         const lab = rgb2lab(r0, g0, b0);
-        let minDist = Infinity, minIdx = -1;
+        let minDist = Infinity,
+          minIdx = -1;
         paletteLab.forEach((pl, idx) => {
           const dist = labDist(...lab, ...pl);
-          if (dist < minDist) { minDist = dist; minIdx = idx; }
+          if (dist < minDist) {
+            minDist = dist;
+            minIdx = idx;
+          }
         });
         clusterMap[i / 4] = minIdx;
       }
@@ -393,7 +583,9 @@ export default function Result() {
         // 선택된 색상 강조
         const clusterIdx = clusterMap[i / 4];
         if (selectedIdx !== null && clusterIdx !== selectedIdx) {
-          const gray = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+          const gray = Math.round(
+            0.2126 * r + 0.7152 * g + 0.0722 * b
+          );
           r = g = b = gray;
         }
 
@@ -410,10 +602,14 @@ export default function Result() {
             const idx = y * w + x;
             const c = clusterMap[idx];
             const neighbors = [
-              clusterMap[idx - 1], clusterMap[idx + 1],
-              clusterMap[idx - w], clusterMap[idx + w],
-              clusterMap[idx - w - 1], clusterMap[idx - w + 1],
-              clusterMap[idx + w - 1], clusterMap[idx + w + 1],
+              clusterMap[idx - 1],
+              clusterMap[idx + 1],
+              clusterMap[idx - w],
+              clusterMap[idx + w],
+              clusterMap[idx - w - 1],
+              clusterMap[idx - w + 1],
+              clusterMap[idx + w - 1],
+              clusterMap[idx + w + 1],
             ];
             const different = neighbors.some(n => n !== c);
             if (different) {
@@ -470,14 +666,16 @@ export default function Result() {
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 20 }}>
       {/* 제목 + 저장 버튼 */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-        gap: 12,
-        flexWrap: 'wrap',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
         <h2 style={{ margin: 0 }}>색상 분석 결과</h2>
         <button
           onClick={handleSavePalette}
@@ -564,78 +762,126 @@ export default function Result() {
                 fontWeight: 600,
               }}
             >
-              {m === 'none' ? 'None' : m === 'protan' ? '적색약' : m === 'deutan' ? '녹색약' : '청색약'}
+              {m === 'none'
+                ? 'None'
+                : m === 'protan'
+                ? '적색약'
+                : m === 'deutan'
+                ? '녹색약'
+                : '청색약'}
             </button>
           ))}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>외곽선 강조</span>
-          <label style={{ position: 'relative', width: 50, height: 26, cursor: 'pointer' }}>
+          <label
+            style={{
+              position: 'relative',
+              width: 50,
+              height: 26,
+              cursor: 'pointer',
+            }}
+          >
             <input
               type="checkbox"
               checked={outlineMode}
               onChange={() => setOutlineMode(o => !o)}
               style={{ display: 'none' }}
             />
-            <span style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
-              background: outlineMode ? '#2d7ef7' : '#ccc',
-              borderRadius: 26,
-              transition: '0.3s',
-            }} />
-            <span style={{
-              position: 'absolute',
-              top: 2,
-              left: outlineMode ? 24 : 2,
-              width: 22,
-              height: 22,
-              background: '#fff',
-              borderRadius: '50%',
-              transition: '0.3s',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-            }} />
+            <span
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: outlineMode ? '#2d7ef7' : '#ccc',
+                borderRadius: 26,
+                transition: '0.3s',
+              }}
+            />
+            <span
+              style={{
+                position: 'absolute',
+                top: 2,
+                left: outlineMode ? 24 : 2,
+                width: 22,
+                height: 22,
+                background: '#fff',
+                borderRadius: '50%',
+                transition: '0.3s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              }}
+            />
           </label>
         </div>
       </div>
 
       {/* 캔버스 + 팔레트 목록 */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 20,
+        }}
+      >
         <canvas
           ref={canvasRef}
-          style={{ border: '1px solid #ccc', borderRadius: 8, maxWidth: '70%', height: 'auto' }}
+          style={{
+            border: '1px solid #ccc',
+            borderRadius: 8,
+            maxWidth: '70%',
+            height: 'auto',
+          }}
         />
 
         <div style={{ width: '30%' }}>
           <h3 style={{ marginTop: 0 }}>팔레트</h3>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            overflowY: 'auto',
-            maxHeight: '70vh',
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+              overflowY: 'auto',
+              maxHeight: '70vh',
+            }}
+          >
             {palette.map((p, i) => (
               <div
                 key={i}
-                onClick={() => setSelectedIdx(prev => prev === i ? null : i)}
+                onClick={() =>
+                  setSelectedIdx(prev => (prev === i ? null : i))
+                }
                 style={{
                   cursor: 'pointer',
                   padding: 8,
                   borderRadius: 8,
-                  border: i === selectedIdx ? '3px solid #2d7ef7' : '1px solid #ccc',
+                  border:
+                    i === selectedIdx
+                      ? '3px solid #2d7ef7'
+                      : '1px solid #ccc',
                   background: '#fafafa',
                 }}
               >
-                <div style={{
-                  width: '100%',
-                  height: 40,
-                  borderRadius: 6,
-                  background: p.hex,
-                }} />
-                <p style={{ margin: '6px 0 0 0', fontSize: 13 }}>{p.name || '(이름 없음)'}</p>
-                <code>{p.hex}</code><br />
+                <div
+                  style={{
+                    width: '100%',
+                    height: 40,
+                    borderRadius: 6,
+                    background: p.hex,
+                  }}
+                />
+                <p
+                  style={{
+                    margin: '6px 0 0 0',
+                    fontSize: 13,
+                  }}
+                >
+                  {p.name || '(이름 없음)'}
+                </p>
+                <code>{p.hex}</code>
+                <br />
                 <small>{p.pct.toFixed(1)}%</small>
               </div>
             ))}
