@@ -69,12 +69,12 @@ function generateColorPairs(interval, centerHueA = null, centerHueB = null, rang
   const pairs = [];
   const saturation = 70;
   const lightness = 50;
-  const minAngleDiff = 60; // 최소 60° 차이
-  const seen = new Set(); // 중복 체크용
+  const minAngleDiff = 60;
+  const seen = new Set();
   
-  // 중심이 지정되면 그 주변만, 아니면 전체 범위
+  // 중심이 지정되면 그 주변만, 1단계면 0-180만 (대립각 중복 방지)
   const startA = centerHueA !== null ? centerHueA - range / 2 : 0;
-  const endA = centerHueA !== null ? centerHueA + range / 2 : 360;
+  const endA = centerHueA !== null ? centerHueA + range / 2 : 180; // ✅ 180까지만
   
   for (let hueA = startA; hueA < endA; hueA += interval) {
     const normalizedA = ((hueA % 360) + 360) % 360;
@@ -91,12 +91,11 @@ function generateColorPairs(interval, centerHueA = null, centerHueB = null, rang
       
       // 너무 가까운 색은 제외
       if (diff >= minAngleDiff && diff <= 300) {
-        // 중복 체크: 작은 값을 먼저, 큰 값을 나중에 (정규화)
+        // 중복 체크
         const min = Math.min(normalizedA, normalizedB);
         const max = Math.max(normalizedA, normalizedB);
         const key = `${min}-${max}`;
         
-        // 이미 존재하는 쌍이면 스킵
         if (seen.has(key)) continue;
         seen.add(key);
         
@@ -113,78 +112,6 @@ function generateColorPairs(interval, centerHueA = null, centerHueB = null, rang
   }
   
   return pairs;
-}
-
-// ============================
-// CVD 유형 추론
-// ============================
-
-function inferCVDType(hueA, hueB) {
-  // 각 CVD 유형의 혼동 축 정의
-  const cvdAxes = {
-    protan: [0, 180],    // 빨강-청록
-    deutan: [30, 190],   // 주황-청록
-    tritan: [60, 240]    // 노랑-보라
-  };
-  
-  // 측정된 색상 쌍을 정규화 (작은 값, 큰 값 순서)
-  const measured = [Math.min(hueA, hueB), Math.max(hueA, hueB)];
-  
-  // 각 CVD 축과의 거리 계산
-  const distances = {};
-  
-  Object.entries(cvdAxes).forEach(([type, axis]) => {
-    // 축의 두 점과 측정된 쌍의 각 점 사이 거리의 합
-    // 측정된 쌍이 축에 가까울수록 거리 합이 작음
-    
-    // measured[0]과 axis 중 가까운 것
-    const dist1_0 = Math.min(
-      Math.abs(measured[0] - axis[0]),
-      Math.abs(measured[0] - axis[1]),
-      360 - Math.abs(measured[0] - axis[0]),
-      360 - Math.abs(measured[0] - axis[1])
-    );
-    
-    // measured[1]과 axis 중 가까운 것
-    const dist1_1 = Math.min(
-      Math.abs(measured[1] - axis[0]),
-      Math.abs(measured[1] - axis[1]),
-      360 - Math.abs(measured[1] - axis[0]),
-      360 - Math.abs(measured[1] - axis[1])
-    );
-    
-    // 또는 반대로: axis[0]과 measured 중 가까운 것 + axis[1]과 measured 중 가까운 것
-    const dist2_0 = Math.min(
-      Math.abs(axis[0] - measured[0]),
-      Math.abs(axis[0] - measured[1]),
-      360 - Math.abs(axis[0] - measured[0]),
-      360 - Math.abs(axis[0] - measured[1])
-    );
-    
-    const dist2_1 = Math.min(
-      Math.abs(axis[1] - measured[0]),
-      Math.abs(axis[1] - measured[1]),
-      360 - Math.abs(axis[1] - measured[0]),
-      360 - Math.abs(axis[1] - measured[1])
-    );
-    
-    // 두 방식 중 작은 값 선택
-    distances[type] = Math.min(dist1_0 + dist1_1, dist2_0 + dist2_1);
-  });
-  
-  // 가장 거리가 가까운 CVD 유형 반환
-  let minType = 'protan';
-  let minDist = distances.protan;
-  
-  if (distances.deutan < minDist) {
-    minType = 'deutan';
-    minDist = distances.deutan;
-  }
-  if (distances.tritan < minDist) {
-    minType = 'tritan';
-  }
-  
-  return minType;
 }
 
 // ============================
@@ -209,12 +136,6 @@ export default function ColorCalibrator() {
       }
     }
 
-    const typeLabels = {
-      protan: "적색약 (Protanomaly)",
-      deutan: "녹색약 (Deuteranomaly)",
-      tritan: "청색약 (Tritanomaly)"
-    };
-
     return (
       <div style={styles.container}>
         <div style={styles.header}>
@@ -227,10 +148,6 @@ export default function ColorCalibrator() {
             <h3 style={styles.savedProfileTitle}>저장된 측정 결과</h3>
             <div style={styles.savedProfileContent}>
               <div style={styles.savedProfileRow}>
-                <span style={styles.savedProfileLabel}>유형</span>
-                <span style={styles.savedProfileValue}>{typeLabels[profileData.inferredType]}</span>
-              </div>
-              <div style={styles.savedProfileRow}>
                 <span style={styles.savedProfileLabel}>혼동 색상</span>
                 <span style={styles.savedProfileValue}>
                   {profileData.confusionPair.hueA}° ↔ {profileData.confusionPair.hueB}°
@@ -239,6 +156,10 @@ export default function ColorCalibrator() {
               <div style={styles.savedProfileRow}>
                 <span style={styles.savedProfileLabel}>혼동선 폭</span>
                 <span style={styles.savedProfileValue}>±{profileData.maxWidth}°</span>
+              </div>
+              <div style={styles.savedProfileRow}>
+                <span style={styles.savedProfileLabel}>심각도</span>
+                <span style={styles.savedProfileValue}>{profileData.severityLabel}</span>
               </div>
               <div style={styles.savedProfileRow}>
                 <span style={styles.savedProfileLabel}>측정 일시</span>
@@ -286,7 +207,7 @@ export default function ColorCalibrator() {
   if (stage === "grid1") {
     return (
       <GridSelection
-        interval={45}
+        interval={30}
         centerHueA={null}
         centerHueB={null}
         range={180}
@@ -624,16 +545,7 @@ function Results({ finalPair, widthMeasurements, setStage }) {
     maxWidth <= 3 ? "중등도" :
     maxWidth <= 5 ? "중등도-중증" : "중증";
 
-  const inferredType = inferCVDType(finalPair.hueA, finalPair.hueB);
-
-  const typeLabels = {
-    protan: "적색약 (Protanomaly)",
-    deutan: "녹색약 (Deuteranomaly)",
-    tritan: "청색약 (Tritanomaly)"
-  };
-
   const profile = {
-    inferredType: inferredType,
     confusionPair: finalPair,
     maxWidth: maxWidth,
     severityLabel: severityLabel,
@@ -648,17 +560,12 @@ function Results({ finalPair, widthMeasurements, setStage }) {
   return (
     <div style={styles.container}>
       <div style={{...styles.resultIcon, background: "#fef3c7", color: "#f59e0b"}}>
-        !
+        ✓
       </div>
       
       <h2 style={styles.title}>측정 완료</h2>
       
       <div style={styles.resultCard}>
-        <div style={styles.resultRow}>
-          <span style={styles.resultLabel}>추론된 유형</span>
-          <span style={styles.resultValue}>{typeLabels[inferredType]}</span>
-        </div>
-        
         <div style={styles.resultRow}>
           <span style={styles.resultLabel}>혼동 색상 쌍</span>
           <span style={styles.resultValue}>
@@ -713,10 +620,10 @@ function Results({ finalPair, widthMeasurements, setStage }) {
       <div style={styles.explanationCard}>
         <h3 style={styles.sectionTitle}>📊 결과 해석</h3>
         <p style={styles.explanationText}>
-          3단계 점진 탐색을 통해 당신의 정확한 혼동 색상 쌍을 발견했습니다.
+          3단계 점진 탐색을 통해 당신이 혼동하는 정확한 색상 쌍을 발견했습니다.
         </p>
         <p style={styles.explanationText}>
-          측정 결과, <strong>{typeLabels[inferredType]}</strong>로 추론되며,
+          이 데이터는 개인 맞춤 색상 보정 필터 제작에 사용됩니다.
           혼동 축에서 <strong>±{maxWidth}°</strong> 범위의 색상을 구별하기 어려워하는
           <strong> {severityLabel}</strong> 수준입니다.
         </p>

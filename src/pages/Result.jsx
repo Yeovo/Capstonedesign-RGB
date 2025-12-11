@@ -8,10 +8,7 @@ const CVD_PROFILE_KEY = 'colorVisionProfile_v6';
 
 /* ---------- 색상 유틸 ---------- */
 const rgb2xyz = (r, g, b) => {
-  const srgb = [r, g, b].map(v => {
-    v /= 255;
-    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-  });
+  const srgb = [r, g, b].map(v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) });
   const [R, G, B] = srgb;
   const X = R * 0.4124564 + G * 0.3575761 + B * 0.1804375;
   const Y = R * 0.2126729 + G * 0.7151522 + B * 0.0721750;
@@ -21,33 +18,22 @@ const rgb2xyz = (r, g, b) => {
 
 const xyz2lab = (X, Y, Z) => {
   const ref = [0.95047, 1, 1.08883];
-  const f = t =>
-    t > Math.pow(6 / 29, 3)
-      ? Math.cbrt(t)
-      : (t * (29 / 6) * (29 / 6) / 3 + 4 / 29);
+  const f = t => t > Math.pow(6 / 29, 3) ? Math.cbrt(t) : (t * (29 / 6) * (29 / 6) / 3 + 4 / 29);
   const [xr, yr, zr] = [X / ref[0], Y / ref[1], Z / ref[2]];
-  const fx = f(xr),
-    fy = f(yr),
-    fz = f(zr);
+  const fx = f(xr), fy = f(yr), fz = f(zr);
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 };
 
 const rgb2lab = (r, g, b) => xyz2lab(...rgb2xyz(r, g, b));
 
 const labDist = (L1, a1, b1, L2, a2, b2) => {
-  const dL = L1 - L2,
-    da = a1 - a2,
-    db = b1 - b2;
+  const dL = L1 - L2, da = a1 - a2, db = b1 - b2;
   return Math.sqrt(dL * dL + da * da + db * db);
 };
 
 const hex2rgb = (hex) => {
   const h = hex.replace('#', '');
-  return [
-    parseInt(h.slice(0, 2), 16),
-    parseInt(h.slice(2, 4), 16),
-    parseInt(h.slice(4, 6), 16),
-  ];
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 };
 
 const rgb2hex = (r, g, b) =>
@@ -100,75 +86,151 @@ const hsl2rgb = (h, s, l) => {
 };
 
 /* ---------- XKCD 색상 이름 찾기 ---------- */
-const nearestXKCDName = rgb => {
+const nearestXKCDName = (rgb) => {
   const lab = rgb2lab(...rgb);
   let best = { name: null, d: Infinity };
   for (const c of xkcdColors) {
     const cRgb = hex2rgb(c.code);
     const d = labDist(...lab, ...rgb2lab(...cRgb));
-    if (d < best.d) {
-      best = { name: c.english, d };
-    }
+    if (d < best.d) { best = { name: c.english, d }; }
   }
   return best.name;
 };
 
-/* ---------- K-means 1회 실행 ---------- */
-const runKMeans = (pixels, k, iterations = 8) => {
-  if (!pixels.length || k <= 0) {
-    return { centers: [], counts: [], sse: 0 };
+/* ---------- 빠른 K-means 팔레트 추출 ---------- */
+const extractPalette = async (imgUrl, targetClusters = 8, iterations = 12) => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const img = await new Promise((res, rej) => {
+    const i = new Image(); 
+    i.crossOrigin = 'anonymous';
+    i.onload = () => res(i); 
+    i.onerror = rej; 
+    i.src = imgUrl;
+  });
+  
+  // 이미지 리사이즈 (속도 개선)
+  const ratio = img.width > 400 ? 400 / img.width : 1;
+  const w = Math.max(1, Math.round(img.width * ratio));
+  const h = Math.max(1, Math.round(img.height * ratio));
+  canvas.width = w; 
+  canvas.height = h;
+  ctx.drawImage(img, 0, 0, w, h);
+  const { data } = ctx.getImageData(0, 0, w, h);
+  
+  // 픽셀 샘플링 (최대 5000개로 제한)
+  const pixels = [];
+  const maxSamples = 5000;
+  const step = Math.max(1, Math.floor((w * h) / maxSamples));
+  
+  for (let i = 0; i < w * h; i += step) {
+    const o = i * 4;
+    const r = data[o], g = data[o + 1], b = data[o + 2], a = data[o + 3];
+    if (a < 128) continue;
+    
+    const [hue, sat, light] = rgb2hsl(r, g, b);
+    if (sat < 0.05 && (light < 0.05 || light > 0.95)) continue;
+    
+    pixels.push([r, g, b]);
   }
+  
+  if (!pixels.length) return [];
+  
+  // 동적 k 결정 (단순화)
+  const k = Math.min(targetClusters, Math.max(3, Math.floor(pixels.length / 100)));
+  
+  // K-means 실행 (단순 RGB 거리)
+  const centers = runFastKMeans(pixels, k, iterations);
+  
+  // 각 클러스터의 픽셀 수 계산
+  const counts = Array(k).fill(0);
+  for (const p of pixels) {
+    let bi = 0, bd = Infinity;
+    for (let c = 0; c < k; c++) {
+      const dr = p[0] - centers[c][0];
+      const dg = p[1] - centers[c][1];
+      const db = p[2] - centers[c][2];
+      const d = dr * dr + dg * dg + db * db;
+      if (d < bd) { bd = d; bi = c; }
+    }
+    counts[bi]++;
+  }
+  
+  const total = counts.reduce((a, b) => a + b, 0);
+  
+  // 팔레트 생성
+  let palette = centers
+    .map((rgb, i) => ({
+      rgb,
+      hex: rgb2hex(...rgb),
+      pct: total ? (counts[i] / total * 100) : 0,
+      name: nearestXKCDName(rgb),
+    }))
+    .filter(p => p.pct >= 1.0)
+    .sort((a, b) => b.pct - a.pct);
+  
+  // 비슷한 색상 병합 (선택적)
+  const merged = mergeSimilarColors(palette);
+  
+  return merged;
+};
 
-  // 초기 중심 무작위 선택
+/* ---------- 빠른 K-means (RGB 거리만 사용) ---------- */
+function runFastKMeans(pixels, k, iterations) {
   const centers = [];
-  for (let c = 0; c < k; c++) {
-    centers.push(pixels[Math.floor(Math.random() * pixels.length)].slice());
-  }
-
-  const assignments = new Array(pixels.length);
-  let sse = 0;
-
-  for (let it = 0; it < iterations; it++) {
-    sse = 0;
-
-    // 1) 각 픽셀을 가장 가까운 중심에 할당
+  
+  // K-means++ 초기화
+  const initialIdx = Math.floor(Math.random() * pixels.length);
+  centers.push(pixels[initialIdx].slice());
+  
+  for (let c = 1; c < k; c++) {
+    const distances = pixels.map(p => {
+      let minDist = Infinity;
+      for (const center of centers) {
+        const dr = p[0] - center[0];
+        const dg = p[1] - center[1];
+        const db = p[2] - center[2];
+        const d = dr * dr + dg * dg + db * db;
+        if (d < minDist) minDist = d;
+      }
+      return minDist;
+    });
+    
+    const totalDist = distances.reduce((a, b) => a + b, 0);
+    let rand = Math.random() * totalDist;
+    
     for (let i = 0; i < pixels.length; i++) {
-      const p = pixels[i];
-      let bi = 0;
-      let bd = Infinity;
-
+      rand -= distances[i];
+      if (rand <= 0) {
+        centers.push(pixels[i].slice());
+        break;
+      }
+    }
+  }
+  
+  // K-means 반복
+  for (let it = 0; it < iterations; it++) {
+    const sums = Array.from({ length: k }, () => [0, 0, 0, 0]);
+    
+    for (const p of pixels) {
+      let bi = 0, bd = Infinity;
+      
       for (let c = 0; c < k; c++) {
         const dr = p[0] - centers[c][0];
         const dg = p[1] - centers[c][1];
         const db = p[2] - centers[c][2];
         const d = dr * dr + dg * dg + db * db;
-        if (d < bd) {
-          bd = d;
-          bi = c;
-        }
+        if (d < bd) { bd = d; bi = c; }
       }
-
-      assignments[i] = bi;
-      sse += bd; // SSE 누적
+      
+      const s = sums[bi];
+      s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; s[3]++;
     }
-
-    // 2) 각 클러스터 중심 재계산
-    const sums = Array.from({ length: k }, () => [0, 0, 0, 0]); // [r, g, b, count]
-
-    for (let i = 0; i < pixels.length; i++) {
-      const p = pixels[i];
-      const ci = assignments[i];
-      const s = sums[ci];
-      s[0] += p[0];
-      s[1] += p[1];
-      s[2] += p[2];
-      s[3] += 1;
-    }
-
+    
     for (let c = 0; c < k; c++) {
       if (sums[c][3] === 0) {
-        // 빈 클러스터는 랜덤 픽셀로 재초기화
-        centers[c] = pixels[Math.floor(Math.random() * pixels.length)].slice();
+        const randIdx = Math.floor(Math.random() * pixels.length);
+        centers[c] = pixels[randIdx].slice();
       } else {
         centers[c] = [
           Math.round(sums[c][0] / sums[c][3]),
@@ -178,289 +240,134 @@ const runKMeans = (pixels, k, iterations = 8) => {
       }
     }
   }
+  
+  return centers;
+}
 
-  // 마지막 assignments 기준으로 각 클러스터 픽셀 수 세기
-  const counts = Array(k).fill(0);
-  for (let i = 0; i < assignments.length; i++) {
-    counts[assignments[i]]++;
-  }
-
-  return { centers, counts, sse };
-};
-
-/* ---------- Elbow Method로 최적 K 선택 ---------- */
-const chooseBestKByElbow = results => {
-  if (results.length === 0) return null;
-  if (results.length === 1) return results[0].k;
-
-  const ks = results.map(r => r.k);
-  const sses = results.map(r => r.sse);
-
-  const k1 = ks[0];
-  const kN = ks[ks.length - 1];
-  const s1 = sses[0];
-  const sN = sses[sses.length - 1];
-
-  const denom = Math.hypot(kN - k1, sN - s1) || 1;
-
-  let bestIdx = 0;
-  let bestDist = -1;
-
-  // 양 끝점 제외, 중간 점들에서 선과의 거리 최대인 지점 = 팔꿈치
-  for (let i = 1; i < ks.length - 1; i++) {
-    const k = ks[i];
-    const s = sses[i];
-    const num =
-      Math.abs((sN - s1) * k - (kN - k1) * s + kN * s1 - sN * k1);
-    const dist = num / denom;
-    if (dist > bestDist) {
-      bestDist = dist;
-      bestIdx = i;
-    }
-  }
-
-  return ks[bestIdx];
-};
-
-/* ---------- 비슷한 색 병합 (Lab 거리 기준) ---------- */
-const mergePalette = (centers, counts, threshold = 4) => {
+/* ---------- 비슷한 색상 병합 ---------- */
+function mergeSimilarColors(palette) {
   const merged = [];
-
-  for (let i = 0; i < centers.length; i++) {
-    const rgb = centers[i];
-    const count = counts[i];
-    const lab = rgb2lab(...rgb);
-
-    let target = null;
-    let targetIdx = -1;
-
-    for (let j = 0; j < merged.length; j++) {
-      const m = merged[j];
-      const d = labDist(...lab, ...m.lab);
-      if (d < threshold) {
-        target = m;
-        targetIdx = j;
-        break;
+  const used = new Set();
+  
+  for (let i = 0; i < palette.length; i++) {
+    if (used.has(i)) continue;
+    
+    const p1 = palette[i];
+    const toMerge = [i];
+    
+    for (let j = i + 1; j < palette.length; j++) {
+      if (used.has(j)) continue;
+      
+      const p2 = palette[j];
+      const lab1 = rgb2lab(...p1.rgb);
+      const lab2 = rgb2lab(...p2.rgb);
+      const dist = labDist(...lab1, ...lab2);
+      
+      // LAB 거리 15 미만이면 병합
+      if (dist < 15) {
+        toMerge.push(j);
+        used.add(j);
       }
     }
-
-    if (!target) {
+    
+    if (toMerge.length > 1) {
+      let totalR = 0, totalG = 0, totalB = 0, totalPct = 0;
+      
+      for (const idx of toMerge) {
+        const p = palette[idx];
+        totalR += p.rgb[0] * p.pct;
+        totalG += p.rgb[1] * p.pct;
+        totalB += p.rgb[2] * p.pct;
+        totalPct += p.pct;
+      }
+      
+      const avgRgb = [
+        Math.round(totalR / totalPct),
+        Math.round(totalG / totalPct),
+        Math.round(totalB / totalPct)
+      ];
+      
       merged.push({
-        rgb: rgb.slice(),
-        lab: lab.slice(),
-        count,
+        rgb: avgRgb,
+        hex: rgb2hex(...avgRgb),
+        pct: totalPct,
+        name: nearestXKCDName(avgRgb)
       });
     } else {
-      const total = target.count + count;
-
-      // 가중 평균으로 중심 재계산
-      const newRgb = [
-        Math.round((target.rgb[0] * target.count + rgb[0] * count) / total),
-        Math.round((target.rgb[1] * target.count + rgb[1] * count) / total),
-        Math.round((target.rgb[2] * target.count + rgb[2] * count) / total),
-      ];
-      const newLab = [
-        (target.lab[0] * target.count + lab[0] * count) / total,
-        (target.lab[1] * target.count + lab[1] * count) / total,
-        (target.lab[2] * target.count + lab[2] * count) / total,
-      ];
-
-      merged[targetIdx] = {
-        rgb: newRgb,
-        lab: newLab,
-        count: total,
-      };
+      merged.push(p1);
     }
   }
+  
+  return merged.sort((a, b) => b.pct - a.pct);
+}
 
-  return merged;
-};
-
-/* ---------- K-means 팔레트 추출 (Elbow + 병합) ---------- */
-const extractPalette = async (
-  imgUrl,
-  clusters = 'auto',
-  sampleSize = 200 * 200,
-  iterations = 8
-) => {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  const img = await new Promise((res, rej) => {
-    const i = new Image();
-    i.crossOrigin = 'anonymous';
-    i.onload = () => res(i);
-    i.onerror = rej;
-    i.src = imgUrl;
-  });
-
-  const ratio = img.width > 320 ? 320 / img.width : 1;
-  const w = Math.max(1, Math.round(img.width * ratio));
-  const h = Math.max(1, Math.round(img.height * ratio));
-  canvas.width = w;
-  canvas.height = h;
-  ctx.drawImage(img, 0, 0, w, h);
-
-  const { data } = ctx.getImageData(0, 0, w, h);
-  const pixels = [];
-  const step = Math.max(1, Math.floor((w * h) / sampleSize));
-
-  for (let i = 0; i < w * h; i += step) {
-    const o = i * 4;
-    const r = data[o],
-      g = data[o + 1],
-      b = data[o + 2],
-      a = data[o + 3];
-    if (a < 128) continue;
-    pixels.push([r, g, b]);
-  }
-
-  if (!pixels.length) return [];
-
-  let chosen;
-
-  if (clusters === 'auto') {
-    // 너무 많은 K는 비슷한 색만 늘어나므로 3~8 정도로 제한
-    const candidateKs = [3, 4, 5, 6, 7, 8];
-    const results = [];
-
-    for (const k of candidateKs) {
-      const r = runKMeans(pixels, k, iterations);
-      results.push({ k, ...r });
-    }
-
-    const bestK = chooseBestKByElbow(results) ?? candidateKs[0];
-    chosen = results.find(r => r.k === bestK) || results[0];
-  } else {
-    const k = typeof clusters === 'number' ? clusters : 5;
-    const r = runKMeans(pixels, k, iterations);
-    chosen = { k, ...r };
-  }
-
-  const { centers, counts } = chosen;
-
-  // Lab 거리 기준으로 비슷한 색 병합
-  const merged = mergePalette(centers, counts, 6);
-  const total = merged.reduce((acc, m) => acc + m.count, 0) || 1;
-
-  return merged
-    .map(m => ({
-      rgb: m.rgb,
-      hex: rgb2hex(...m.rgb),
-      pct: (m.count / total) * 100,
-      name: nearestXKCDName(m.rgb),
-    }))
-    .sort((a, b) => b.pct - a.pct);
-};
-
-/* ---------- 색약 필터 (기존) ---------- */
-const applyFilter = (r, g, b, mode) => {
-  if (mode === 'none') return [r, g, b];
-  if (mode === 'protan')
-    return [
-      r * 0.566 + g * 0.433 + b * 0,
-      r * 0.558 + g * 0.442 + b * 0,
-      r * 0 + g * 0.242 + b * 0.758,
-    ];
-  if (mode === 'deutan')
-    return [
-      r * 0.625 + g * 0.375 + b * 0,
-      r * 0.7 + g * 0.3 + b * 0,
-      r * 0 + g * 0.3 + b * 0.7,
-    ];
-  if (mode === 'tritan')
-    return [
-      r * 0.95 + g * 0.05 + b * 0,
-      r * 0 + g * 0.433 + b * 0.567,
-      r * 0 + g * 0.475 + b * 0.525,
-    ];
-  return [r, g, b];
-};
-
-/* ---------- CVD 필터 (개인 맞춤) ---------- */
+/* ---------- 개인 맞춤 CVD 필터 ---------- */
 const applyCVDFilter = (r, g, b, cvdProfile) => {
   if (!cvdProfile || !cvdProfile.confusionPair) return [r, g, b];
   
   const [h, s, l] = rgb2hsl(r, g, b);
   
-  // 채도/명도가 너무 낮으면 건너뛰기
   if (s < 0.08 || l < 0.05 || l > 0.95) {
     return [r, g, b];
   }
   
   const { hueA, hueB } = cvdProfile.confusionPair;
+  const maxWidth = cvdProfile.maxWidth || 0;
   
-  // ✅ 혼동 축 주변 넓은 영역 (±40°)
-  const rangeA = 40;
-  const rangeB = 40;
+  const oppositeA = (hueA + 180) % 360;
+  const oppositeB = (hueB + 180) % 360;
   
-  // hueA 주변 (빨강~주황 영역)
-  let inZoneA = false;
-  let distFromZoneA = 999;
+  const confusionPoints = [hueA, hueB, oppositeA, oppositeB];
+  const zoneWidth = 35 + maxWidth * 3;
   
-  // 순환 거리 계산
-  const distToA = Math.min(
-    Math.abs(h - hueA),
-    Math.abs(h - hueA + 360),
-    Math.abs(h - hueA - 360)
-  );
+  let minDist = 999;
   
-  if (distToA <= rangeA) {
-    inZoneA = true;
-    distFromZoneA = distToA;
-  }
-  
-  // hueB 주변 (초록~황록 영역)  
-  let inZoneB = false;
-  let distFromZoneB = 999;
-  
-  const distToB = Math.min(
-    Math.abs(h - hueB),
-    Math.abs(h - hueB + 360),
-    Math.abs(h - hueB - 360)
-  );
-  
-  if (distToB <= rangeB) {
-    inZoneB = true;
-    distFromZoneB = distToB;
-  }
-  
-  if (!inZoneA && !inZoneB) {
-    return [r, g, b]; // 혼동 영역 밖
-  }
-  
-  // ✅ hue 이동: 거리에 비례해서 점진적으로
-  let newH = h;
-  
-  if (inZoneA && inZoneB) {
-    // 두 영역 사이 (매우 혼동되는 영역)
-    // 가까운 쪽으로 강하게 이동
-    if (distFromZoneA < distFromZoneB) {
-      // A 쪽으로
-      const direction = h < hueA ? -1 : 1;
-      newH = h + direction * 50; // 큰 shift
-    } else {
-      // B 쪽으로
-      const direction = h < hueB ? -1 : 1;
-      newH = h + direction * 50;
+  for (const point of confusionPoints) {
+    const dist = Math.min(
+      Math.abs(h - point),
+      Math.abs(h - point + 360),
+      Math.abs(h - point - 360)
+    );
+    
+    if (dist < minDist) {
+      minDist = dist;
     }
-  } else if (inZoneA) {
-    // A 영역만 (빨강 계열)
-    // A 중심에서 멀어지는 방향으로
-    const direction = h < hueA ? -1 : 1;
-    const intensity = 1 - (distFromZoneA / rangeA); // 중심에 가까울수록 강하게
-    newH = h + direction * 40 * intensity;
-  } else if (inZoneB) {
-    // B 영역만 (초록 계열)
-    const direction = h < hueB ? -1 : 1;
-    const intensity = 1 - (distFromZoneB / rangeB);
-    newH = h + direction * 40 * intensity;
   }
   
-  // 360도 순환
+  if (minDist > zoneWidth) {
+    return [r, g, b];
+  }
+  
+  const axisCenter = (hueA + hueB) / 2;
+  
+  let perpendicular1 = (axisCenter + 90) % 360;
+  let perpendicular2 = (axisCenter - 90 + 360) % 360;
+  
+  const distToPer1 = Math.min(
+    Math.abs(h - perpendicular1),
+    Math.abs(h - perpendicular1 + 360),
+    Math.abs(h - perpendicular1 - 360)
+  );
+  
+  const distToPer2 = Math.min(
+    Math.abs(h - perpendicular2),
+    Math.abs(h - perpendicular2 + 360),
+    Math.abs(h - perpendicular2 - 360)
+  );
+  
+  const targetHue = distToPer1 < distToPer2 ? perpendicular1 : perpendicular2;
+  
+  const intensity = 1 - (minDist / zoneWidth);
+  const shiftAmount = 60 * intensity;
+  
+  let newH = h + (targetHue > h ? shiftAmount : -shiftAmount);
+  
   while (newH < 0) newH += 360;
   while (newH >= 360) newH -= 360;
   
-  const [newR, newG, newB] = hsl2rgb(newH, s, l);
+  let newS = Math.min(1, s * 1.2);
+  
+  const [newR, newG, newB] = hsl2rgb(newH, newS, l);
   
   if (isNaN(newR) || isNaN(newG) || isNaN(newB)) {
     return [r, g, b];
@@ -473,6 +380,72 @@ const applyCVDFilter = (r, g, b, cvdProfile) => {
   ];
 };
 
+/* ---------- 색약 혼동 검사 (단순화 및 수정) ---------- */
+const areColorsConfused = (rgb1, rgb2, cvdProfile) => {
+  if (!cvdProfile || !cvdProfile.confusionPair) return false;
+  
+  const { hueA, hueB } = cvdProfile.confusionPair;
+  const maxWidth = cvdProfile.maxWidth || 0;
+  
+  const [h1, s1, l1] = rgb2hsl(...rgb1);
+  const [h2, s2, l2] = rgb2hsl(...rgb2);
+  
+  // 1. 무채색 제외
+  if (s1 < 0.12 || s2 < 0.12) return false;
+  
+  // 2. 명도 차이가 너무 크면 구분 가능
+  const lightnessDiff = Math.abs(l1 - l2);
+  if (lightnessDiff > 0.4) return false;
+  
+  // 3. 원래부터 너무 비슷한 색 제외
+  const lab1 = rgb2lab(...rgb1);
+  const lab2 = rgb2lab(...rgb2);
+  const labDistance = labDist(...lab1, ...lab2);
+  if (labDistance < 12) return false;
+  
+  // 4. 혼동 범위 계산 (더 넓게)
+  const range = 60 + maxWidth * 2;
+  
+  // 각 색상이 hueA 또는 hueB 근처에 있는지 확인
+  const distToA1 = Math.min(Math.abs(h1 - hueA), 360 - Math.abs(h1 - hueA));
+  const distToB1 = Math.min(Math.abs(h1 - hueB), 360 - Math.abs(h1 - hueB));
+  const distToA2 = Math.min(Math.abs(h2 - hueA), 360 - Math.abs(h2 - hueA));
+  const distToB2 = Math.min(Math.abs(h2 - hueB), 360 - Math.abs(h2 - hueB));
+  
+  const nearA1 = distToA1 < range;
+  const nearB1 = distToB1 < range;
+  const nearA2 = distToA2 < range;
+  const nearB2 = distToB2 < range;
+  
+  // 5. 한 색상은 A 근처, 다른 색상은 B 근처면 혼동
+  const confused = (nearA1 && nearB2) || (nearB1 && nearA2);
+  
+  if (!confused) return false;
+  
+  // 6. 추가 검증: 채도 차이
+  const satDiff = Math.abs(s1 - s2);
+  if (satDiff > 0.45) return false;
+  
+  return true;
+};
+
+/* ---------- 팔레트에서 혼동 쌍 찾기 ---------- */
+const findConfusedPairs = (palette, cvdProfile) => {
+  if (!cvdProfile || !palette.length || palette.length < 2) return [];
+  
+  const pairs = [];
+  
+  for (let i = 0; i < palette.length; i++) {
+    for (let j = i + 1; j < palette.length; j++) {
+      if (areColorsConfused(palette[i].rgb, palette[j].rgb, cvdProfile)) {
+        pairs.push([i, j]);
+      }
+    }
+  }
+  
+  return pairs;
+};
+
 /* ---------- 메인 Result ---------- */
 export default function Result() {
   const location = useLocation();
@@ -483,9 +456,10 @@ export default function Result() {
   const [palette, setPalette] = useState([]);
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [outlineMode, setOutlineMode] = useState(false);
-  const [filterMode, setFilterMode] = useState('none');
   const [cvdFilterEnabled, setCvdFilterEnabled] = useState(false);
   const [cvdProfile, setCvdProfile] = useState(null);
+  const [confusedPairs, setConfusedPairs] = useState([]);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   // CVD 프로파일 로드
   useEffect(() => {
@@ -509,122 +483,144 @@ export default function Result() {
     );
   }
 
-  // 팔레트 추출 (K 자동 선택 + 병합)
+  // 팔레트 추출 (CVD와 독립적)
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      const pal = await extractPalette(imageUrl, 'auto');
-      if (mounted) setPalette(pal);
-    })();
-    return () => {
-      mounted = false;
+    
+    const extractAsync = async () => {
+      setIsExtracting(true);
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      const pal = await extractPalette(imageUrl);
+      
+      if (mounted) {
+        setPalette(pal);
+        setIsExtracting(false);
+      }
     };
+    
+    extractAsync();
+    
+    return () => { mounted = false; };
   }, [imageUrl]);
 
-  // 캔버스 그리기 (클러스터 + 필터)
+  // 혼동 쌍 계산 (동기 처리로 단순화)
   useEffect(() => {
-    if (!canvasRef.current || !palette.length) return;
+    if (!palette.length || !cvdProfile) {
+      setConfusedPairs([]);
+      return;
+    }
     
-    (async () => {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      const img = await new Promise((res, rej) => {
-        const i = new Image();
-        i.crossOrigin = 'anonymous';
-        i.onload = () => res(i);
-        i.onerror = rej;
-        i.src = imageUrl;
+    const pairs = findConfusedPairs(palette, cvdProfile);
+    setConfusedPairs(pairs);
+  }, [palette, cvdProfile]);
+
+  // 보색 계산 함수 추가
+const getComplementaryColor = (r, g, b) => {
+  const [h, s, l] = rgb2hsl(r, g, b);
+  // 보색은 색상환에서 180도 반대편
+  const compH = (h + 180) % 360;
+  // 채도는 약간 낮추고, 명도는 중간~밝게
+  const compS = Math.min(s * 0.8, 0.6);
+  const compL = 0.75; // 밝게 해서 오버레이로 적합하게
+  return hsl2rgb(compH, compS, compL);
+};
+
+// 캔버스 그리기 부분 수정
+useEffect(() => {
+  if (!canvasRef.current || !palette.length) return;
+  
+  (async () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const img = await new Promise((res, rej) => {
+      const i = new Image(); i.crossOrigin = 'anonymous';
+      i.onload = () => res(i); i.onerror = rej; i.src = imageUrl;
+    });
+
+    const maxW = 1440;
+    const ratio = img.width > maxW ? maxW / img.width : 1;
+    const w = Math.round(img.width * ratio);
+    const h = Math.round(img.height * ratio);
+    canvas.width = w; canvas.height = h;
+
+    ctx.drawImage(img, 0, 0, w, h);
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+
+    const paletteLab = palette.map(p => rgb2lab(...p.rgb));
+    const clusterMap = new Uint8Array(w * h);
+
+    // clusterMap 계산
+    for (let i = 0; i < d.length; i += 4) {
+      const r0 = d[i], g0 = d[i + 1], b0 = d[i + 2];
+      const lab = rgb2lab(r0, g0, b0);
+      let minDist = Infinity, minIdx = -1;
+      paletteLab.forEach((pl, idx) => {
+        const dist = labDist(...lab, ...pl);
+        if (dist < minDist) { minDist = dist; minIdx = idx; }
       });
+      clusterMap[i / 4] = minIdx;
+    }
 
-      const maxW = 1440;
-      const ratio = img.width > maxW ? maxW / img.width : 1;
-      const w = Math.round(img.width * ratio);
-      const h = Math.round(img.height * ratio);
-      canvas.width = w;
-      canvas.height = h;
+    // ✅ 선택된 색상의 보색 계산 (한 번만)
+    let complementaryRGB = null;
+    if (selectedIdx !== null) {
+      const selectedColor = palette[selectedIdx].rgb;
+      complementaryRGB = getComplementaryColor(...selectedColor);
+    }
 
-      ctx.drawImage(img, 0, 0, w, h);
-      const imgData = ctx.getImageData(0, 0, w, h);
-      const d = imgData.data;
-
-      const paletteLab = palette.map(p => rgb2lab(...p.rgb));
-      const clusterMap = new Uint8Array(w * h);
-
-      // 1) clusterMap 계산
-      for (let i = 0; i < d.length; i += 4) {
-        const r0 = d[i],
-          g0 = d[i + 1],
-          b0 = d[i + 2];
-        const lab = rgb2lab(r0, g0, b0);
-        let minDist = Infinity,
-          minIdx = -1;
-        paletteLab.forEach((pl, idx) => {
-          const dist = labDist(...lab, ...pl);
-          if (dist < minDist) {
-            minDist = dist;
-            minIdx = idx;
-          }
-        });
-        clusterMap[i / 4] = minIdx;
+    // 필터 적용
+    for (let i = 0; i < d.length; i += 4) {
+      let r = d[i], g = d[i + 1], b = d[i + 2];
+      
+      if (cvdFilterEnabled && cvdProfile) {
+        [r, g, b] = applyCVDFilter(r, g, b, cvdProfile);
       }
 
-      // 2) 필터 적용
-      for (let i = 0; i < d.length; i += 4) {
-        let r = d[i], g = d[i + 1], b = d[i + 2];
-        
-        // 기존 색약 시뮬레이션 필터
-        [r, g, b] = applyFilter(r, g, b, filterMode);
-        
-        // 개인 맞춤 CVD 필터
-        if (cvdFilterEnabled && cvdProfile) {
-          [r, g, b] = applyCVDFilter(r, g, b, cvdProfile);
-        }
-
-        // 선택된 색상 강조
-        const clusterIdx = clusterMap[i / 4];
-        if (selectedIdx !== null && clusterIdx !== selectedIdx) {
-          const gray = Math.round(
-            0.2126 * r + 0.7152 * g + 0.0722 * b
-          );
-          r = g = b = gray;
-        }
-
-        d[i] = Math.max(0, Math.min(255, Math.round(r)));
-        d[i + 1] = Math.max(0, Math.min(255, Math.round(g)));
-        d[i + 2] = Math.max(0, Math.min(255, Math.round(b)));
+      const clusterIdx = clusterMap[i / 4];
+      
+      // ✅ 보색 오버레이 적용
+      if (selectedIdx !== null && clusterIdx !== selectedIdx) {
+        const alpha = 0.75; // 75% 오버레이 강도
+        r = r * (1 - alpha) + complementaryRGB[0] * alpha;
+        g = g * (1 - alpha) + complementaryRGB[1] * alpha;
+        b = b * (1 - alpha) + complementaryRGB[2] * alpha;
       }
 
-      // 3) 외곽선 강조
-      if (outlineMode) {
-        const borderColor = [0, 0, 0];
-        for (let y = 1; y < h - 1; y++) {
-          for (let x = 1; x < w - 1; x++) {
-            const idx = y * w + x;
-            const c = clusterMap[idx];
-            const neighbors = [
-              clusterMap[idx - 1],
-              clusterMap[idx + 1],
-              clusterMap[idx - w],
-              clusterMap[idx + w],
-              clusterMap[idx - w - 1],
-              clusterMap[idx - w + 1],
-              clusterMap[idx + w - 1],
-              clusterMap[idx + w + 1],
-            ];
-            const different = neighbors.some(n => n !== c);
-            if (different) {
-              const o = idx * 4;
-              d[o] = borderColor[0];
-              d[o + 1] = borderColor[1];
-              d[o + 2] = borderColor[2];
-            }
+      d[i] = Math.max(0, Math.min(255, Math.round(r)));
+      d[i + 1] = Math.max(0, Math.min(255, Math.round(g)));
+      d[i + 2] = Math.max(0, Math.min(255, Math.round(b)));
+    }
+
+    // 외곽선 강조
+    if (outlineMode) {
+      const borderColor = [0, 0, 0];
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const idx = y * w + x;
+          const c = clusterMap[idx];
+          const neighbors = [
+            clusterMap[idx - 1], clusterMap[idx + 1],
+            clusterMap[idx - w], clusterMap[idx + w],
+            clusterMap[idx - w - 1], clusterMap[idx - w + 1],
+            clusterMap[idx + w - 1], clusterMap[idx + w + 1],
+          ];
+          const different = neighbors.some(n => n !== c);
+          if (different) {
+            const o = idx * 4;
+            d[o] = borderColor[0];
+            d[o + 1] = borderColor[1];
+            d[o + 2] = borderColor[2];
           }
         }
       }
+    }
 
-      ctx.putImageData(imgData, 0, 0);
-    })();
-  }, [imageUrl, palette, selectedIdx, outlineMode, filterMode, cvdFilterEnabled, cvdProfile]);
+    ctx.putImageData(imgData, 0, 0);
+  })();
+}, [imageUrl, palette, selectedIdx, outlineMode, cvdFilterEnabled, cvdProfile]);
 
   /* ---------- 팔레트 저장 ---------- */
   const handleSavePalette = () => {
@@ -657,25 +653,17 @@ export default function Result() {
     }
   };
 
-  const typeLabels = {
-    protan: "적색약",
-    deutan: "녹색약",
-    tritan: "청색약"
-  };
-
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 20 }}>
       {/* 제목 + 저장 버튼 */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 8,
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+        gap: 12,
+        flexWrap: 'wrap',
+      }}>
         <h2 style={{ margin: 0 }}>색상 분석 결과</h2>
         <button
           onClick={handleSavePalette}
@@ -707,8 +695,7 @@ export default function Result() {
             <div>
               <strong style={{ color: '#1e40af' }}>측정된 색각 프로파일:</strong>
               <span style={{ marginLeft: 8, color: '#4b5563' }}>
-                {typeLabels[cvdProfile.inferredType] || cvdProfile.inferredType}
-                {' '}(혼동: {cvdProfile.confusionPair?.hueA}° ↔ {cvdProfile.confusionPair?.hueB}°)
+                혼동 {cvdProfile.confusionPair?.hueA}° ↔ {cvdProfile.confusionPair?.hueB}° (±{cvdProfile.maxWidth}°)
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -744,147 +731,157 @@ export default function Result() {
         </div>
       )}
 
-      {/* 필터 / 외곽선 토글 */}
+      {/* 외곽선 토글 */}
       <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-          <strong>시뮬레이션:</strong>
-          {['none', 'protan', 'deutan', 'tritan'].map(m => (
-            <button
-              key={m}
-              onClick={() => setFilterMode(m)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 10,
-                border: '1px solid #d1d5db',
-                cursor: 'pointer',
-                background: filterMode === m ? '#2d7ef7' : '#fff',
-                color: filterMode === m ? '#fff' : '#111',
-                fontWeight: 600,
-              }}
-            >
-              {m === 'none'
-                ? 'None'
-                : m === 'protan'
-                ? '적색약'
-                : m === 'deutan'
-                ? '녹색약'
-                : '청색약'}
-            </button>
-          ))}
-        </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>외곽선 강조</span>
-          <label
-            style={{
-              position: 'relative',
-              width: 50,
-              height: 26,
-              cursor: 'pointer',
-            }}
-          >
+          <label style={{ position: 'relative', width: 50, height: 26, cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={outlineMode}
               onChange={() => setOutlineMode(o => !o)}
               style={{ display: 'none' }}
             />
-            <span
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: outlineMode ? '#2d7ef7' : '#ccc',
-                borderRadius: 26,
-                transition: '0.3s',
-              }}
-            />
-            <span
-              style={{
-                position: 'absolute',
-                top: 2,
-                left: outlineMode ? 24 : 2,
-                width: 22,
-                height: 22,
-                background: '#fff',
-                borderRadius: '50%',
-                transition: '0.3s',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-              }}
-            />
+            <span style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              background: outlineMode ? '#2d7ef7' : '#ccc',
+              borderRadius: 26,
+              transition: '0.3s',
+            }} />
+            <span style={{
+              position: 'absolute',
+              top: 2,
+              left: outlineMode ? 24 : 2,
+              width: 22,
+              height: 22,
+              background: '#fff',
+              borderRadius: '50%',
+              transition: '0.3s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            }} />
           </label>
         </div>
       </div>
 
       {/* 캔버스 + 팔레트 목록 */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 20,
-        }}
-      >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
         <canvas
           ref={canvasRef}
-          style={{
-            border: '1px solid #ccc',
-            borderRadius: 8,
-            maxWidth: '70%',
-            height: 'auto',
-          }}
+          style={{ border: '1px solid #ccc', borderRadius: 8, maxWidth: '70%', height: 'auto' }}
         />
 
         <div style={{ width: '30%' }}>
           <h3 style={{ marginTop: 0 }}>팔레트</h3>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-              overflowY: 'auto',
-              maxHeight: '70vh',
-            }}
-          >
-            {palette.map((p, i) => (
-              <div
-                key={i}
-                onClick={() =>
-                  setSelectedIdx(prev => (prev === i ? null : i))
-                }
-                style={{
-                  cursor: 'pointer',
-                  padding: 8,
-                  borderRadius: 8,
-                  border:
-                    i === selectedIdx
-                      ? '3px solid #2d7ef7'
-                      : '1px solid #ccc',
-                  background: '#fafafa',
-                }}
-              >
+          
+          {/* 로딩 상태 */}
+          {isExtracting && (
+            <div style={{
+              padding: 24,
+              background: '#f3f4f6',
+              borderRadius: 8,
+              marginBottom: 12,
+              textAlign: 'center',
+            }}>
+              <div style={{ 
+                fontSize: 16,
+                fontWeight: 600, 
+                color: '#374151',
+                marginBottom: 8,
+              }}>
+                팔레트 분석 중...
+              </div>
+              <div style={{ 
+                fontSize: 13, 
+                color: '#6b7280',
+              }}>
+                잠시만 기다려주세요
+              </div>
+            </div>
+          )}
+          
+          {/* 혼동 경고 */}
+          {!isExtracting && confusedPairs.length > 0 && (
+            <div style={{
+              padding: 12,
+              background: '#fef3c7',
+              border: '2px solid #f59e0b',
+              borderRadius: 8,
+              marginBottom: 12,
+            }}>
+              <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 8 }}>
+                ⚠️ 혼동 발견: {confusedPairs.length}개 쌍
+              </div>
+              <div style={{ fontSize: 13, color: '#78350f' }}>
+                {confusedPairs.map(([i, j], idx) => (
+                  <div key={idx} style={{ marginBottom: 4 }}>
+                    • 색상 {i + 1} ↔ 색상 {j + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            overflowY: 'auto',
+            maxHeight: '70vh',
+          }}>
+            {!isExtracting && palette.map((p, i) => {
+              const confusedWith = confusedPairs
+                .filter(([a, b]) => a === i || b === i)
+                .map(([a, b]) => a === i ? b : a);
+              
+              const isConfused = confusedWith.length > 0;
+              
+              return (
                 <div
+                  key={i}
+                  onClick={() => setSelectedIdx(prev => prev === i ? null : i)}
                   style={{
+                    cursor: 'pointer',
+                    padding: 8,
+                    borderRadius: 8,
+                    border: i === selectedIdx 
+                      ? '3px solid #2d7ef7' 
+                      : isConfused 
+                        ? '3px solid #f59e0b'
+                        : '1px solid #ccc',
+                    background: isConfused ? '#fef3c7' : '#fafafa',
+                    position: 'relative',
+                  }}
+                >
+                  {isConfused && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      background: '#f59e0b',
+                      color: '#fff',
+                      fontSize: 10,
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      fontWeight: 700,
+                    }}>
+                      ↔ {confusedWith.map(idx => idx + 1).join(', ')}
+                    </div>
+                  )}
+                  <div style={{
                     width: '100%',
                     height: 40,
                     borderRadius: 6,
                     background: p.hex,
-                  }}
-                />
-                <p
-                  style={{
-                    margin: '6px 0 0 0',
-                    fontSize: 13,
-                  }}
-                >
-                  {p.name || '(이름 없음)'}
-                </p>
-                <code>{p.hex}</code>
-                <br />
-                <small>{p.pct.toFixed(1)}%</small>
-              </div>
-            ))}
+                  }} />
+                  <p style={{ margin: '6px 0 0 0', fontSize: 13, fontWeight: 600 }}>
+                    {i + 1}. {p.name || '(이름 없음)'}
+                  </p>
+                  <code>{p.hex}</code><br />
+                  <small>{p.pct.toFixed(1)}%</small>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
